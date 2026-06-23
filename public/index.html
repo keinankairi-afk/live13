@@ -5,44 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>LIVE13 — Nonton Live Streaming Piala Dunia 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/hls.js@latest">
-// === Server Selector ===
-(function(){
-  var bar=document.getElementById('serverBar');
-  if(!bar)return;
-  fetch('/api/servers').then(function(r){return r.json()}).then(function(d){
-    if(!d.matches||d.matches.length===0)return;
-    var match=d.matches[0];
-    bar.innerHTML='';
-    match.servers.forEach(function(s,i){
-      var chip=document.createElement('div');
-      chip.className='server-chip'+(i===0?' active':'');
-      chip.innerHTML='<span class="dot"></span>'+s.name;
-      chip.setAttribute('data-url',s.url);
-      chip.onclick=function(){
-        document.querySelectorAll('.server-chip').forEach(function(c){c.classList.remove('active')});
-        chip.classList.add('active');
-        loadServer(s.url);
-      };
-      bar.appendChild(chip);
-    });
-  }).catch(function(e){console.log('Server list error:',e)});
-  
-  function loadServer(url){
-    var wrap=document.getElementById('playerWrap');
-    if(!wrap)return;
-    var oldPlayer=wrap.querySelector('#player');
-    if(oldPlayer)oldPlayer.remove();
-    var iframe=document.createElement('iframe');
-    iframe.id='player';
-    iframe.src=url;
-    iframe.allow='autoplay;encrypted-media;picture-in-picture';
-    iframe.allowFullscreen=true;
-    iframe.style.cssText='width:100%;height:100%;border:none;position:absolute;inset:0;z-index:1';
-    wrap.appendChild(iframe);
-  }
-})();
-</script>
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -93,12 +56,12 @@ body{overflow-x:hidden;background:var(--bg);color:var(--text);font-family:'Geist
 
 /* LAYOUT */
 .container{max-width:1400px;margin:0 auto;padding:0 24px}
-.main{display:grid;grid-template-columns:1fr 360px;gap:20px;padding:20px 0 40px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;padding:20px 0 40px}
 @media(max-width:1024px){.main{grid-template-columns:1fr;gap:16px}}
 
 /* VIDEO PLAYER */
 .player-col{overflow:hidden;min-width:0}
-.player-wrap{position:relative;width:100%;aspect-ratio:16/9;background:var(--bg2);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.player-wrap{position:relative;width:100%;max-width:100%;aspect-ratio:16/9;background:var(--bg2);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
 .player-wrap video{width:100%;height:100%;object-fit:contain;background:#000}
 .player-bar{position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;align-items:flex-start;z-index:5;background:linear-gradient(180deg,rgba(0,0,0,.7),transparent)}
 .badge-live{display:inline-flex;align-items:center;gap:5px;background:var(--live);padding:3px 10px;border-radius:4px;font-family:'Geist Mono',monospace;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.08em}
@@ -282,7 +245,7 @@ body{overflow-x:hidden;background:var(--bg);color:var(--text);font-family:'Geist
 <div class="container">
   <div class="main">
     <!-- LEFT: Player -->
-    <div class="player-col">
+    <div class="player-col" style="overflow:hidden;min-width:0;max-width:100%">
       <div class="player-wrap" id="playerWrap">
         <video id="player" playsinline></video>
         <div class="player-bar">
@@ -312,7 +275,7 @@ body{overflow-x:hidden;background:var(--bg);color:var(--text);font-family:'Geist
         </div>
       </div>
 
-      
+
       <!-- Server Selector -->
       <div id="serverSelector" style="padding:6px 0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch">
         <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-family:'Geist Mono',monospace">SERVER</div>
@@ -403,19 +366,14 @@ async function loadLiveStream(){
     const r=await fetch('/api/nobar/list');
     const d=await r.json();
     if(d.matches&&d.matches.length>0){
-      const wc=d.matches.find(m=>m.league&&m.league.includes('世界杯'))||d.matches[0];
+      const wc=d.matches[0];
       const sr=await fetch('/api/nobar?matchId='+wc.id);
       const sd=await sr.json();
-      if(sd.url){
-        streamUrl=sd.url;
-        if(hlsInstance){if(streamUrl)hlsInstance.loadSource(streamUrl);}
-        if(typeof mHls!=='undefined'&&mHls){mHls.loadSource(streamUrl);}
-      }
+      if(sd.url){streamUrl=sd.url;if(hlsInstance){if(streamUrl)hlsInstance.loadSource(streamUrl);}}
     }
-  }catch(e){console.log('Stream load error:',e);}
+  }catch(e){console.log('Stream error:',e);}
 }
-loadLiveStream();
-setInterval(loadLiveStream,60000);
+loadLiveStream();setInterval(loadLiveStream,60000);
 const v=document.getElementById('player');
 const errEl=document.getElementById('err');
 const playBtn=document.getElementById('playBtn');
@@ -426,7 +384,7 @@ function initHls(){
     hlsInstance=new Hls();
     if(streamUrl)hlsInstance.loadSource(streamUrl);
     hlsInstance.attachMedia(v);
-    hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>{v.play().then(()=>{playBtn.classList.add('hidden')}).catch(()=>{})});
+    hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>{v.muted=false;v.play().then(()=>{playBtn.classList.add('hidden')}).catch(()=>{})});
     hlsInstance.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal){errEl.style.display='block';playBtn.style.display='none'}});
   }else if(v.canPlayType('application/vnd.apple.mpegurl')){
     if(streamUrl)v.src=streamUrl;
@@ -661,43 +619,7 @@ function card(m){
 
 loadData();
 setInterval(loadData,300000);
-
-// === Server Selector ===
-(function(){
-  var bar=document.getElementById('serverBar');
-  if(!bar)return;
-  fetch('/api/servers').then(function(r){return r.json()}).then(function(d){
-    if(!d.matches||d.matches.length===0)return;
-    var match=d.matches[0];
-    bar.innerHTML='';
-    match.servers.forEach(function(s,i){
-      var chip=document.createElement('div');
-      chip.className='server-chip'+(i===0?' active':'');
-      chip.innerHTML='<span class="dot"></span>'+s.name;
-      chip.setAttribute('data-url',s.url);
-      chip.onclick=function(){
-        document.querySelectorAll('.server-chip').forEach(function(c){c.classList.remove('active')});
-        chip.classList.add('active');
-        loadServer(s.url);
-      };
-      bar.appendChild(chip);
-    });
-  }).catch(function(e){console.log('Server list error:',e)});
-  
-  function loadServer(url){
-    var wrap=document.getElementById('playerWrap');
-    if(!wrap)return;
-    var oldPlayer=wrap.querySelector('#player');
-    if(oldPlayer)oldPlayer.remove();
-    var iframe=document.createElement('iframe');
-    iframe.id='player';
-    iframe.src=url;
-    iframe.allow='autoplay;encrypted-media;picture-in-picture';
-    iframe.allowFullscreen=true;
-    iframe.style.cssText='width:100%;height:100%;border:none;position:absolute;inset:0;z-index:1';
-    wrap.appendChild(iframe);
-  }
-})();
 </script>
+<script src="/server-selector.js"></script>
 </body>
 </html>

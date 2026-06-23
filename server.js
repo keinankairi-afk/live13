@@ -22,13 +22,13 @@ const CACHE_TTL = 30000; // 30 seconds
 
 // Serve static files with caching
 app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: '1h',
+  maxAge: '0',
   etag: true,
   lastModified: true
 }));
 // Fallback: serve from parent live13 directory
 app.use(express.static(path.join(__dirname, '..', 'live13'), {
-  maxAge: '1h',
+  maxAge: '0',
   etag: true,
   lastModified: true
 }));
