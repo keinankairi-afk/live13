@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>LIVE13 — Nonton Live Streaming Piala Dunia 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest">
+// === Server Selector ===
+(function(){
+  var bar=document.getElementById('serverBar');
+  if(!bar)return;
+  fetch('/api/servers').then(function(r){return r.json()}).then(function(d){
+    if(!d.matches||d.matches.length===0)return;
+    var match=d.matches[0];
+    bar.innerHTML='';
+    match.servers.forEach(function(s,i){
+      var chip=document.createElement('div');
+      chip.className='server-chip'+(i===0?' active':'');
+      chip.innerHTML='<span class="dot"></span>'+s.name;
+      chip.setAttribute('data-url',s.url);
+      chip.onclick=function(){
+        document.querySelectorAll('.server-chip').forEach(function(c){c.classList.remove('active')});
+        chip.classList.add('active');
+        loadServer(s.url);
+      };
+      bar.appendChild(chip);
+    });
+  }).catch(function(e){console.log('Server list error:',e)});
+  
+  function loadServer(url){
+    var wrap=document.getElementById('playerWrap');
+    if(!wrap)return;
+    var oldPlayer=wrap.querySelector('#player');
+    if(oldPlayer)oldPlayer.remove();
+    var iframe=document.createElement('iframe');
+    iframe.id='player';
+    iframe.src=url;
+    iframe.allow='autoplay;encrypted-media;picture-in-picture';
+    iframe.allowFullscreen=true;
+    iframe.style.cssText='width:100%;height:100%;border:none;position:absolute;inset:0;z-index:1';
+    wrap.appendChild(iframe);
+  }
+})();
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#000;--bg2:#0a0a0a;--bg3:#111;--bg4:#1a1a1a;
+  --border:#222;--border2:#333;
+  --text:#fff;--text2:#a1a1a1;--text3:#666;
+  --accent:#a3e635;--accent2:#84cc16;
+  --live:#ef4444;--live-bg:rgba(239,68,68,.12);
+}
+body{overflow-x:hidden;background:var(--bg);color:var(--text);font-family:'Geist',system-ui,-apple-system,sans-serif;min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:rgba(0,0,0,.8);backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+.nav-inner{max-width:1400px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:8px;text-decoration:none}
+.nav-mark{font-family:'Geist Mono',monospace;font-weight:700;font-size:13px;color:var(--bg);background:var(--accent);padding:4px 8px;border-radius:4px;letter-spacing:-.02em}
+.nav-title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:-.03em}
+.nav-right{display:flex;align-items:center;gap:12px}
+.nav-live{display:flex;align-items:center;gap:6px;font-family:'Geist Mono',monospace;font-size:11px;font-weight:600;color:var(--live);text-transform:uppercase;letter-spacing:.06em}
+.nav-live-dot{width:6px;height:6px;background:var(--live);border-radius:50%;animation:pulse 2s infinite}
+.nav-link{font-size:13px;font-weight:500;color:var(--text3);text-decoration:none;transition:color .15s}
+.nav-link:hover{color:var(--text)}
+.nav-link.active{color:var(--accent)}
+
+/* MUSIC CONTROL */
+.music-ctrl{display:flex;align-items:center;gap:8px}
+.music-btn{font-family:'Geist Mono',monospace;font-size:10px;font-weight:600;color:var(--text3);background:rgba(255,255,255,.06);border:1px solid var(--border);padding:4px 12px;border-radius:20px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
+.music-btn:hover{color:var(--text2);border-color:var(--border2)}
+.music-btn.playing{color:var(--accent);border-color:rgba(163,230,53,.3);background:rgba(163,230,53,.06)}
+.music-btn svg{width:12px;height:12px}
+.music-bars{display:flex;align-items:flex-end;gap:2px;height:12px}
+.music-bars span{width:2px;background:var(--accent);border-radius:1px;animation:musicBar .8s ease-in-out infinite}
+.music-bars span:nth-child(1){height:4px;animation-delay:0s}
+.music-bars span:nth-child(2){height:8px;animation-delay:.15s}
+.music-bars span:nth-child(3){height:6px;animation-delay:.3s}
+.music-bars span:nth-child(4){height:10px;animation-delay:.45s}
+.music-label{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@keyframes musicBar{0%,100%{height:4px}50%{height:12px}}
+@media(max-width:768px){.music-label{display:none}.music-btn{padding:4px 8px}}
+
+/* MUSIC TOAST */
+.music-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border2);border-radius:10px;padding:12px 20px;display:none;align-items:center;gap:10px;z-index:9999;cursor:pointer;animation:slideUp .4s ease;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.music-toast svg{width:16px;height:16px;color:var(--accent)}
+.music-toast span{font-family:'Geist Mono',monospace;font-size:12px;font-weight:600;color:var(--text)}
+.music-toast small{font-size:11px;color:var(--text3)}
+@keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@media(max-width:768px){.music-toast{bottom:80px;padding:10px 16px}}
+
+/* LAYOUT */
+.container{max-width:1400px;margin:0 auto;padding:0 24px}
+.main{display:grid;grid-template-columns:1fr 360px;gap:20px;padding:20px 0 40px}
+@media(max-width:1024px){.main{grid-template-columns:1fr;gap:16px}}
+
+/* VIDEO PLAYER */
+.player-col{overflow:hidden;min-width:0}
+.player-wrap{position:relative;width:100%;aspect-ratio:16/9;background:var(--bg2);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
+.player-wrap video{width:100%;height:100%;object-fit:contain;background:#000}
+.player-bar{position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;align-items:flex-start;z-index:5;background:linear-gradient(180deg,rgba(0,0,0,.7),transparent)}
+.badge-live{display:inline-flex;align-items:center;gap:5px;background:var(--live);padding:3px 10px;border-radius:4px;font-family:'Geist Mono',monospace;font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.08em}
+.badge-live-dot{width:5px;height:5px;background:#fff;border-radius:50%;animation:pulse 1.5s infinite}
+.badge-quality{font-family:'Geist Mono',monospace;font-size:10px;font-weight:600;color:var(--text2);background:rgba(255,255,255,.08);border:1px solid var(--border);padding:3px 10px;border-radius:4px}
+.player-controls{position:absolute;bottom:0;left:0;right:0;padding:10px 16px;display:flex;align-items:center;gap:8px;z-index:5;background:linear-gradient(0deg,rgba(0,0,0,.7),transparent)}
+.ctrl-btn{font-family:'Geist Mono',monospace;font-size:11px;font-weight:600;color:var(--text2);background:rgba(255,255,255,.06);border:1px solid var(--border);padding:6px 14px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s}
+.ctrl-btn:hover{color:var(--text);border-color:var(--border2);background:rgba(255,255,255,.1)}
+.ctrl-btn svg{width:13px;height:13px}
+.player-error{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;z-index:5}
+.player-error p{font-size:14px;font-weight:500;color:var(--text3)}
+.player-error small{font-size:12px;color:var(--text3);opacity:.6;margin-top:4px;display:block}
+.play-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:64px;height:64px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10;transition:all .2s;border:none}
+.play-btn:hover{transform:translate(-50%,-50%) scale(1.08);box-shadow:0 0 40px rgba(163,230,53,.3)}
+.play-btn svg{width:24px;height:24px;margin-left:3px}
+.play-btn.hidden{display:none}
+
+/* MATCH INFO BAR */
+.match-info{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 0;flex-wrap:wrap}
+.match-info-left{display:flex;align-items:center;gap:12px}
+.match-info-right{display:flex;gap:8px}
+.btn{font-family:'Geist',sans-serif;font-size:12px;font-weight:600;padding:8px 18px;border-radius:8px;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--accent);color:var(--bg)}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--text);border-color:var(--border2)}
+
+/* TABS */
+.tabs{display:flex;gap:4px;padding:12px 0;border-bottom:1px solid var(--border)}
+.tab{font-family:'Geist Mono',monospace;font-size:11px;font-weight:600;padding:8px 16px;border-radius:6px;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .15s;letter-spacing:.02em;text-transform:uppercase}
+.tab:hover{color:var(--text2);background:var(--bg3)}
+.tab.active{color:var(--bg);background:var(--text)}
+.tab .count{font-size:10px;color:var(--text3);margin-left:4px}
+.tab.active .count{color:var(--bg3)}
+
+/* SECTIONS */
+.section{display:none}
+.section.active{display:block}
+
+/* MATCH CARDS */
+.match-list{display:flex;flex-direction:column}
+.match-card{display:grid;grid-template-columns:64px 1fr 80px 80px;gap:12px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);transition:background .15s}
+.match-card:last-child{border-bottom:none}
+.match-card:hover{background:var(--bg2)}
+.match-card.live{background:rgba(239,68,68,.03)}
+.match-card.live:hover{background:rgba(239,68,68,.06)}
+@media(max-width:768px){
+  .match-card{grid-template-columns:50px 1fr 60px;gap:8px;padding:12px}
+  .match-card .mc-stage{display:none}
+}
+.mc-time{text-align:center}
+.mc-time .t{font-family:'Geist Mono',monospace;font-size:13px;font-weight:700;color:var(--text)}
+.mc-time .d{font-size:10px;color:var(--text3);margin-top:2px}
+.mc-teams{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+.mc-teams .vs{font-family:'Geist Mono',monospace;font-size:10px;color:var(--text3);font-weight:400;text-transform:uppercase}
+.mc-teams .flag{font-size:18px}
+.mc-score{font-family:'Geist Mono',monospace;font-size:18px;font-weight:800;color:var(--text);text-align:center;letter-spacing:-.02em}
+.mc-status{font-family:'Geist Mono',monospace;font-size:10px;font-weight:700;padding:3px 10px;border-radius:4px;text-align:center;text-transform:uppercase;letter-spacing:.06em}
+.mc-status.live{background:var(--live-bg);color:var(--live)}
+.mc-status.upcoming{background:rgba(163,230,53,.08);color:var(--accent)}
+.mc-status.finished{background:var(--bg3);color:var(--text3)}
+.mc-stage{font-size:11px;color:var(--text3)}
+
+/* SECTION HEADER */
+.section-head{display:flex;align-items:center;justify-content:space-between;padding:20px 0 12px}
+.section-title{font-size:14px;font-weight:700;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+.section-count{font-family:'Geist Mono',monospace;font-size:11px;font-weight:600;color:var(--accent);background:rgba(163,230,53,.08);padding:2px 8px;border-radius:4px}
+
+/* GROUP TABLES */
+.groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+@media(max-width:768px){.groups{grid-template-columns:1fr}}
+.group{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.group-head{padding:12px 16px;font-family:'Geist Mono',monospace;font-size:12px;font-weight:700;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px}
+.group table{width:100%;border-collapse:collapse}
+.group th{padding:8px 12px;font-family:'Geist Mono',monospace;font-size:10px;font-weight:600;color:var(--text3);text-align:left;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border)}
+.group td{padding:8px 12px;font-size:12px;font-weight:500;border-bottom:1px solid rgba(255,255,255,.03)}
+.group tr:last-child td{border-bottom:none}
+.group .pos{width:24px;text-align:center;font-family:'Geist Mono',monospace;font-weight:700;color:var(--text)}
+.group .pts{font-family:'Geist Mono',monospace;font-weight:800;color:var(--accent)}
+.group .team-cell{display:flex;align-items:center;gap:8px}
+.group .num{width:28px;text-align:center;font-family:'Geist Mono',monospace;font-size:11px}
+
+/* SIDEBAR */
+.sidebar{display:flex;flex-direction:column;gap:16px}
+@media(max-width:1024px){.sidebar{order:2}}
+
+/* DONATE CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.card-icon{width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--bg)}
+.card-title{font-size:14px;font-weight:700}
+.card-desc{font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:14px}
+.donate-btn{width:100%;padding:10px 16px;border-radius:8px;font-family:'Geist',sans-serif;font-size:12px;font-weight:700;cursor:pointer;border:none;display:flex;align-items:center;gap:8px;justify-content:center;transition:all .15s;background:var(--accent);color:var(--bg)}
+.donate-btn:hover{background:var(--accent2);transform:translateY(-1px)}
+
+/* MINI PLAYER */
+.mini-player{position:fixed;bottom:16px;right:16px;width:340px;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.8);z-index:9999;display:none;cursor:grab;border:1px solid var(--border)}
+.mini-player.active{display:block}
+.mini-player video{width:100%;height:100%;object-fit:contain}
+.mini-bar{position:absolute;top:0;left:0;right:0;background:linear-gradient(180deg,rgba(0,0,0,.7),transparent);padding:8px 12px;display:flex;align-items:center;justify-content:space-between;z-index:5}
+.mini-label{font-family:'Geist Mono',monospace;font-size:10px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:5px;text-transform:uppercase;letter-spacing:.06em}
+.mini-label .dot{width:5px;height:5px;background:var(--live);border-radius:50%;animation:pulse 1.5s infinite}
+.mini-close{background:rgba(255,255,255,.1);border:none;color:var(--text2);width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.mini-close:hover{background:var(--live);color:#fff}
+.mini-expand{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.5);border:1px solid var(--border);color:var(--text2);font-family:'Geist Mono',monospace;font-size:10px;font-weight:600;padding:4px 10px;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .15s}
+.mini-expand:hover{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+
+/* FOOTER */
+.footer{max-width:1400px;margin:0 auto;padding:20px 24px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.footer-left{font-family:'Geist Mono',monospace;font-size:11px;color:var(--text3);letter-spacing:.02em}
+.footer-right{display:flex;gap:16px}
+.footer a{font-size:11px;color:var(--text3);text-decoration:none;transition:color .15s}
+.footer a:hover{color:var(--accent)}
+
+/* EMPTY STATE */
+.empty{padding:40px;text-align:center;color:var(--text3);font-size:13px}
+
+/* LOADING */
+.loading{padding:40px;text-align:center;color:var(--text3);font-size:13px}
+.loading::after{content:'';display:inline-block;width:14px;height:14px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;margin-left:8px;vertical-align:middle}
+
+/* ANIMATIONS */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .nav-inner{padding:0 12px;height:48px}
+  .nav-mark{font-size:11px;padding:3px 6px}
+  .nav-title{font-size:13px}
+  .nav-live{font-size:10px}
+  .container{padding:0 12px}
+  .main{padding:12px 0 24px}
+  .player-wrap{border-radius:8px}
+  .player-bar{padding:8px 12px}
+  .player-controls{padding:6px 12px}
+  .ctrl-btn{padding:4px 10px;font-size:10px}
+  .match-info{padding:12px 0}
+  .btn{padding:6px 12px;font-size:11px}
+  .tabs{gap:2px;padding:8px 0}
+  .tab{padding:6px 12px;font-size:10px}
+  .match-card{padding:10px 12px}
+  .mc-time .t{font-size:11px}
+  .mc-teams{font-size:11px;gap:6px}
+  .mc-teams .flag{font-size:14px}
+  .mc-score{font-size:14px}
+  .mc-status{font-size:8px;padding:2px 6px}
+  .card{padding:14px;border-radius:8px}
+  .mini-player{width:160px;bottom:8px;right:8px;border-radius:6px}
+  .footer{padding:12px;flex-direction:column;text-align:center}
+  .footer-left,.footer a{font-size:10px}
+}
+
+.server-chip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-family:'Geist Mono',monospace;transition:all .15s;flex-shrink:0}
+.server-chip:hover,.server-chip.active{background:rgba(163,230,53,.1);border-color:var(--accent);color:var(--accent)}
+.server-chip .dot{width:5px;height:5px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.server-chip.active .dot{background:var(--accent)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">
+      <div class="nav-mark">L13</div>
+      <div class="nav-title">LIVE13</div>
+    </a>
+    <div class="nav-right">
+      <div class="music-ctrl">
+        <button class="music-btn" id="musicBtn" onclick="toggleMusic()">
+          <div class="music-bars" id="musicBars"><span></span><span></span><span></span><span></span></div>
+          <span class="music-label" id="musicLabel">Music Off</span>
+        </button>
+      </div>
+      <a href="/worldcup.html" class="nav-link active">Piala Dunia</a>
+      <div class="nav-live"><div class="nav-live-dot"></div>LIVE</div>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="main">
+    <!-- LEFT: Player -->
+    <div class="player-col">
+      <div class="player-wrap" id="playerWrap">
+        <video id="player" playsinline></video>
+        <div class="player-bar">
+          <div class="badge-live"><div class="badge-live-dot"></div>LIVE</div>
+          <div class="badge-quality">HD</div>
+        </div>
+        <div class="player-controls">
+          <button class="ctrl-btn" onclick="toggleMute()">
+            <svg id="muteIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+            <span id="muteLabel">Suara</span>
+          </button>
+          <button class="ctrl-btn" onclick="togglePiP()" id="pipBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="11" y="9" width="9" height="6" rx="1" fill="currentColor" opacity="0.3"/></svg>
+            PiP
+          </button>
+          <button class="ctrl-btn" onclick="goFullscreen()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+            Fullscreen
+          </button>
+        </div>
+        <div class="player-error" id="err" style="display:none">
+          <p>Stream Offline</p>
+          <small>Channel sedang tidak aktif</small>
+        </div>
+        <div class="play-btn" id="playBtn" onclick="playStream()">
+          <svg viewBox="0 0 24 24" fill="#000"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </div>
+      </div>
+
+      
+      <!-- Server Selector -->
+      <div id="serverSelector" style="padding:6px 0;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-family:'Geist Mono',monospace">SERVER</div>
+        <div id="serverBar" style="display:flex;gap:6px;padding:2px 0;overflow-x:auto;scrollbar-width:none"></div>
+      </div>
+
+      <!-- Match Info -->
+      <div class="match-info">
+        <div class="match-info-left">
+          <button class="btn btn-primary" onclick="openDonation()">Dukung LIVE13</button>
+        </div>
+        <div class="match-info-right">
+          <button class="btn btn-ghost" onclick="toggleMiniPlayer()">Mini Player</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="results" onclick="switchTab('results')">Hasil <span class="count" id="resultsCount">-</span></button>
+        <button class="tab" data-tab="upcoming" onclick="switchTab('upcoming')">Jadwal <span class="count" id="upcomingCount">-</span></button>
+        <button class="tab" data-tab="standings" onclick="switchTab('standings')">Klasemen</button>
+      </div>
+
+      <!-- Results -->
+      <div class="section active" id="tab-results">
+        <div class="section-head">
+          <div class="section-title">Pertandingan Selesai</div>
+        </div>
+        <div class="match-list" id="finishedList"><div class="loading">Memuat data...</div></div>
+      </div>
+
+      <!-- Upcoming -->
+      <div class="section" id="tab-upcoming">
+        <div class="section-head">
+          <div class="section-title">Pertandingan Mendatang</div>
+        </div>
+        <div class="match-list" id="upcomingList"><div class="loading">Memuat data...</div></div>
+      </div>
+
+      <!-- Standings -->
+      <div class="section" id="tab-standings">
+        <div class="groups" id="groupsGrid"><div class="loading">Memuat klasemen...</div></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Sidebar -->
+    <div class="sidebar">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-icon">♥</div>
+          <div class="card-title">Dukung LIVE13</div>
+        </div>
+        <div class="card-desc">Dukung kami biar tetep ngonten. Setiap donasi bikin LIVE13 jalan terus.</div>
+        <button class="donate-btn" onclick="openDonation()">Donasi via Saweria</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mini Player -->
+<div class="mini-player" id="miniPlayer">
+  <div class="mini-bar">
+    <div class="mini-label"><div class="dot"></div>LIVE13</div>
+    <button class="mini-close" onclick="closeMiniPlayer()">✕</button>
+  </div>
+  <video id="miniVideo" controls autoplay playsinline></video>
+  <button class="mini-expand" onclick="expandMiniPlayer()">Expand</button>
+</div>
+
+<div class="footer">
+  <div class="footer-left">© 2026 LIVE13</div>
+  <div class="footer-right">
+    <a href="https://saweria.co/losexyz" target="_blank">Donasi</a>
+  </div>
+</div>
+
+<!-- Music Toast -->
+<div class="music-toast" id="musicToast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+  <span>Tap anywhere to play music</span>
+</div>
+
+<script>
+// === Video Player ===
+let streamUrl=null;
+async function loadLiveStream(){
+  try{
+    const r=await fetch('/api/nobar/list');
+    const d=await r.json();
+    if(d.matches&&d.matches.length>0){
+      const wc=d.matches.find(m=>m.league&&m.league.includes('世界杯'))||d.matches[0];
+      const sr=await fetch('/api/nobar?matchId='+wc.id);
+      const sd=await sr.json();
+      if(sd.url){
+        streamUrl=sd.url;
+        if(hlsInstance){if(streamUrl)hlsInstance.loadSource(streamUrl);}
+        if(typeof mHls!=='undefined'&&mHls){mHls.loadSource(streamUrl);}
+      }
+    }
+  }catch(e){console.log('Stream load error:',e);}
+}
+loadLiveStream();
+setInterval(loadLiveStream,60000);
+const v=document.getElementById('player');
+const errEl=document.getElementById('err');
+const playBtn=document.getElementById('playBtn');
+let hlsInstance=null;
+
+function initHls(){
+  if(Hls.isSupported()){
+    hlsInstance=new Hls();
+    if(streamUrl)hlsInstance.loadSource(streamUrl);
+    hlsInstance.attachMedia(v);
+    hlsInstance.on(Hls.Events.MANIFEST_PARSED,()=>{v.play().then(()=>{playBtn.classList.add('hidden')}).catch(()=>{})});
+    hlsInstance.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal){errEl.style.display='block';playBtn.style.display='none'}});
+  }else if(v.canPlayType('application/vnd.apple.mpegurl')){
+    if(streamUrl)v.src=streamUrl;
+    v.addEventListener('error',()=>{errEl.style.display='block';playBtn.style.display='none'});
+  }
+}
+function playStream(){
+  if(!hlsInstance)initHls();
+  v.play().then(()=>{playBtn.classList.add('hidden')}).catch(()=>{});
+}
+v.addEventListener('pause',()=>{playBtn.classList.remove('hidden')});
+v.addEventListener('playing',()=>{playBtn.classList.add('hidden')});
+initHls();
+
+function toggleMute(){
+  v.muted=!v.muted;
+  document.getElementById('muteLabel').textContent=v.muted?'Muted':'Suara';
+}
+function goFullscreen(){
+  const box=document.getElementById('playerWrap');
+  if(box.requestFullscreen)box.requestFullscreen();
+  else if(box.webkitRequestFullscreen)box.webkitRequestFullscreen();
+}
+
+// Picture-in-Picture
+async function togglePiP(){
+  try{
+    if(document.pictureInPictureElement){
+      await document.exitPictureInPicture();
+    }else if(document.pictureInPictureEnabled){
+      await v.requestPictureInPicture();
+    }
+  }catch(e){console.log('PiP error:',e)}
+}
+
+// Update PiP button state
+if('pictureInPictureEnabled' in document){
+  v.addEventListener('enterpictureinpicture',()=>{
+    document.getElementById('pipBtn').style.color='var(--accent)';
+  });
+  v.addEventListener('leavepictureinpicture',()=>{
+    document.getElementById('pipBtn').style.color='';
+  });
+}
+
+// === Mini Player ===
+let miniActive=false;
+const mp=document.getElementById('miniPlayer');
+const mv=document.getElementById('miniVideo');
+let mHls=null;
+
+function toggleMiniPlayer(){
+  if(miniActive){closeMiniPlayer();return}
+  miniActive=true;mp.classList.add('active');
+  if(Hls.isSupported()){
+    mHls=new Hls();mHls.loadSource(streamUrl);mHls.attachMedia(mv);
+    mHls.on(Hls.Events.MANIFEST_PARSED,()=>{mv.play().catch(()=>{})});
+  }
+}
+function closeMiniPlayer(){
+  miniActive=false;mp.classList.remove('active');mv.pause();mv.src='';
+  if(mHls){mHls.destroy();mHls=null}
+}
+function expandMiniPlayer(){
+  closeMiniPlayer();
+  document.getElementById('playerWrap').scrollIntoView({behavior:'smooth'});
+}
+
+let scrollT;
+window.addEventListener('scroll',()=>{clearTimeout(scrollT);scrollT=setTimeout(()=>{
+  const r=v.getBoundingClientRect();
+  if(r.bottom<0&&!miniActive&&v.currentTime>0&&!v.paused)toggleMiniPlayer();
+},200)},{passive:true});
+
+// Drag mini player
+let drag=false,dx,dy;
+mp.addEventListener('mousedown',e=>{if(e.target.tagName==='BUTTON')return;drag=true;dx=e.clientX-mp.offsetLeft;dy=e.clientY-mp.offsetTop;mp.style.cursor='grabbing'});
+document.addEventListener('mousemove',e=>{if(!drag)return;mp.style.left=(e.clientX-dx)+'px';mp.style.top=(e.clientY-dy)+'px';mp.style.right='auto';mp.style.bottom='auto'});
+document.addEventListener('mouseup',()=>{drag=false;mp.style.cursor='grab'});
+
+// === Donations ===
+function openDonation(){window.open('https://saweria.co/losexyz','_blank')}
+
+// === Tabs ===
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+  document.querySelectorAll('.section').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// === FIFA Data ===
+const FIFA='https://api.fifa.com/api/v3/calendar/matches?language=en&count=500&idSeason=285023';
+
+// === Music Player ===
+const bgMusic=new Audio('/bg-music.mp3');
+bgMusic.loop=true;
+bgMusic.volume=0.3;
+let musicPlaying=false;
+let musicEnabled=false;
+let liveMatchActive=false;
+
+function toggleMusic(){
+  const btn=document.getElementById('musicBtn');
+  if(musicEnabled){
+    musicEnabled=false;
+    bgMusic.pause();
+    musicPlaying=false;
+    btn.classList.remove('playing');
+    document.getElementById('musicLabel').textContent='Music Off';
+  }else{
+    musicEnabled=true;
+    if(!liveMatchActive){
+      bgMusic.play().then(()=>{musicPlaying=true}).catch(()=>{});
+      btn.classList.add('playing');
+      document.getElementById('musicLabel').textContent='Playing';
+    }
+  }
+}
+
+// Auto-play on first interaction (browser blocks autoplay without user gesture)
+let autoPlayDone=false;
+function autoPlayMusic(){
+  if(autoPlayDone)return;
+  autoPlayDone=true;
+  musicEnabled=true;
+  if(!liveMatchActive){
+    bgMusic.play().then(()=>{
+      musicPlaying=true;
+      document.getElementById('musicBtn').classList.add('playing');
+      document.getElementById('musicLabel').textContent='Playing';
+    }).catch(()=>{});
+  }
+  document.getElementById('musicToast').style.display='none';
+}
+
+// Show toast and listen for first tap
+window.addEventListener('load',()=>{
+  const toast=document.getElementById('musicToast');
+  toast.style.display='flex';
+  // Listen for click anywhere on page
+  document.addEventListener('click',autoPlayMusic,{once:true});
+  document.addEventListener('touchstart',autoPlayMusic,{once:true});
+});
+
+function updateMusicState(hasLive){
+  liveMatchActive=hasLive;
+  const btn=document.getElementById('musicBtn');
+  if(hasLive){
+    if(musicPlaying){bgMusic.pause();musicPlaying=false}
+    btn.classList.remove('playing');
+    if(musicEnabled)document.getElementById('musicLabel').textContent='Live Match';
+  }else if(musicEnabled){
+    if(!musicPlaying){bgMusic.play().then(()=>{musicPlaying=true}).catch(()=>{})}
+    btn.classList.add('playing');
+    document.getElementById('musicLabel').textContent='Playing';
+  }
+}
+const TM={"Mexico":"Meksiko","South Africa":"South Africa","Korea Republic":"Korea Selatan","Czechia":"Czechia","Canada":"Kanada","Bosnia and Herzegovina":"Bosnia","Qatar":"Qatar","Switzerland":"Swiss","USA":"USA","Paraguay":"Paraguay","New Zealand":"Selandia Baru","Colombia":"Kolombia","Argentina":"Argentina","Japan":"Jepang","France":"Prancis","Germany":"Jerman","Spain":"Spanyol","Brazil":"Brazil","Portugal":"Portugal","England":"Inggris","Croatia":"Kroasia","Morocco":"Maroko","Senegal":"Senegal","Ghana":"Ghana","Panama":"Panama","Egypt":"Mesir","Uruguay":"Uruguay","Saudi Arabia":"Arab Saudi","Iran":"Iran","Ecuador":"Ekuador","Netherlands":"Belanda","Belgium":"Belgia","Ivory Coast":"Pantai Gading","Italy":"Italia","Norway":"Norwegia","Australia":"Australia","Denmark":"Denmark","Tunisia":"Tunisia","Austria":"Austria","Jordan":"Yordania","Congo DR":"DR Kongo","Serbia":"Serbia","Chile":"Chile","Peru":"Peru","Sweden":"Swedia","Iraq":"Irak","Costa Rica":"Kosta Rika","Jamaica":"Jamaica","Türkiye":"Turki","Haiti":"Haiti","Scotland":"Skotlandia","Wales":"Wales","Poland":"Poland","Angola":"Angola","Mali":"Mali","Nigeria":"Nigeria","Cameroon":"Kamerun","Algeria":"Algeria","China PR":"Tiongkok"};
+const FM={"Meksiko":"🇲🇽","South Africa":"🇿🇦","Korea Selatan":"🇰🇷","Czechia":"🇨🇿","Kanada":"🇨🇦","Bosnia":"🇧🇦","Qatar":"🇶🇦","Swiss":"🇨🇭","USA":"🇺🇸","Paraguay":"🇵🇾","Selandia Baru":"🇳🇿","Kolombia":"🇨🇴","Argentina":"🇦🇷","Jepang":"🇯🇵","Prancis":"🇫🇷","Jerman":"🇩🇪","Spanyol":"🇪🇸","Brazil":"🇧🇷","Portugal":"🇵🇹","Inggris":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Kroasia":"🇭🇷","Maroko":"🇲🇦","Senegal":"🇸🇳","Ghana":"🇬🇭","Panama":"🇵🇦","Mesir":"🇪🇬","Uruguay":"🇺🇾","Arab Saudi":"🇸🇦","Iran":"🇮🇷","Ekuador":"🇪🇨","Belanda":"🇳🇱","Belgia":"🇧🇪","Pantai Gading":"🇨🇮","Italia":"🇮🇹","Norwegia":"🇳🇴","Australia":"🇦🇺","Denmark":"🇩🇰","Tunisia":"🇹🇳","Austria":"🇦🇹","Yordania":"🇯🇴","DR Kongo":"🇨🇩","Serbia":"🇷🇸","Chile":"🇨🇱","Peru":"🇵🇪","Swedia":"🇸🇪","Irak":"🇮🇶","Kosta Rika":"🇨🇷","Jamaica":"🇯🇲","Turki":"🇹🇷","Haiti":"🇭🇹","Skotlandia":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","Wales":"🏴󠁧󠁢󠁷󠁬󠁳󠁿","Poland":"🇵🇱","Angola":"🇦🇴","Mali":"🇲🇱","Nigeria":"🇳🇬","Kamerun":"🇨🇲","Algeria":"🇩🇿","Tiongkok":"🇨🇳"};
+
+function tn(t){if(!t)return null;const n=t.TeamName||[];return n[0]?.Description||t.ShortClubName||null}
+function gt(a){return a?.[0]?.Description||''}
+
+async function loadData(){
+  try{
+    const r=await fetch(FIFA);const d=await r.json();
+    if(!d.Results)return;
+    const finished=[],upcoming=[],groups={};
+
+    for(const m of d.Results){
+      const hn=tn(m.Home),an=tn(m.Away);
+      if(!hn||!an)continue;
+      const home=TM[hn]||hn,away=TM[an]||an;
+      const hs=m.HomeTeamScore,as_=m.AwayTeamScore;
+      const gn=gt(m.GroupName),st=gt(m.StageName)||gn;
+      const date=m.Date||'';
+      const hf=FM[home]||'🏳️',af=FM[away]||'🏳️';
+
+      let status='upcoming';
+      if(hs!==null&&as_!==null){
+        try{const dt=new Date(date),now=new Date();status=(now-dt)/60000<120?'live':'finished'}catch(e){status='finished'}
+      }
+
+      const entry={home,away,homeScore:hs||0,awayScore:as_||0,status,date,hf,af,stage:st,gn};
+
+      if(status==='finished'||status==='live')finished.push(entry);
+      else upcoming.push(entry);
+
+      if(gn&&!st.includes('Round')&&!st.includes('Final')){
+        if(!groups[gn])groups[gn]=[];
+        if(!groups[gn].find(t=>t.name===home))groups[gn].push({name:home,flag:hf,w:0,d:0,l:0,gf:0,ga:0,pts:0});
+        if(!groups[gn].find(t=>t.name===away))groups[gn].push({name:away,flag:af,w:0,d:0,l:0,gf:0,ga:0,pts:0});
+        if(status==='finished'){
+          const ht=groups[gn].find(t=>t.name===home),at=groups[gn].find(t=>t.name===away);
+          ht.gf+=hs;ht.ga+=as_;at.gf+=as_;at.ga+=hs;
+          if(hs>as_){ht.w++;ht.pts+=3;at.l++}else if(hs<as_){at.w++;at.pts+=3;ht.l++}else{ht.d++;at.d++;ht.pts++;at.pts++}
+        }
+      }
+    }
+
+    finished.sort((a,b)=>new Date(b.date)-new Date(a.date));
+    upcoming.sort((a,b)=>new Date(a.date)-new Date(b.date));
+
+    document.getElementById('resultsCount').textContent=finished.length;
+    document.getElementById('upcomingCount').textContent=upcoming.length;
+
+    // Update music state based on live matches
+    const hasLive=finished.some(m=>m.status==='live');
+    updateMusicState(hasLive);
+
+    const fl=document.getElementById('finishedList');
+    fl.innerHTML=finished.length?finished.map(m=>card(m)).join(''):'<div class="empty">Belum ada hasil</div>';
+    const ul=document.getElementById('upcomingList');
+    ul.innerHTML=upcoming.length?upcoming.map(m=>card(m)).join(''):'<div class="empty">Tidak ada jadwal</div>';
+
+    const gg=document.getElementById('groupsGrid');
+    const gNames=Object.keys(groups).sort();
+    for(const g of gNames)groups[g].sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf);
+    gg.innerHTML=gNames.map(g=>`<div class="group"><div class="group-head">${g}</div><table><thead><tr><th>#</th><th>Tim</th><th class="num">M</th><th class="num">S</th><th class="num">K</th><th class="num">GM</th><th class="num">GK</th><th class="num">Poin</th></tr></thead><tbody>${groups[g].map((t,i)=>`<tr><td class="pos">${i+1}</td><td><div class="team-cell">${t.flag} ${t.name}</div></td><td class="num">${t.w}</td><td class="num">${t.d}</td><td class="num">${t.l}</td><td class="num">${t.gf}</td><td class="num">${t.ga}</td><td class="pts">${t.pts}</td></tr>`).join('')}</tbody></table></div>`).join('');
+  }catch(e){console.error('FIFA error:',e)}
+}
+
+function card(m){
+  const sc=m.status||'upcoming';
+  const st=m.status==='live'?'LIVE':m.status==='finished'?'FT':'Upcoming';
+  const score=m.homeScore!=null&&m.awayScore!=null?`${m.homeScore} — ${m.awayScore}`:'vs';
+  const t=m.date?new Date(m.date).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'}):'TBD';
+  const d=m.date?new Date(m.date).toLocaleDateString('id-ID',{day:'numeric',month:'short',timeZone:'Asia/Jakarta'}):'';
+  return `<div class="match-card ${sc}"><div class="mc-time"><div class="t">${t}</div><div class="d">${d}</div></div><div class="mc-teams">${m.hf||'🏳️'} ${m.home||'TBD'} <span class="vs">vs</span> ${m.af||'🏳️'} ${m.away||'TBD'}</div><div class="mc-score">${score}</div><div class="mc-status ${sc}">${st}</div></div>`;
+}
+
+loadData();
+setInterval(loadData,300000);
+
+// === Server Selector ===
+(function(){
+  var bar=document.getElementById('serverBar');
+  if(!bar)return;
+  fetch('/api/servers').then(function(r){return r.json()}).then(function(d){
+    if(!d.matches||d.matches.length===0)return;
+    var match=d.matches[0];
+    bar.innerHTML='';
+    match.servers.forEach(function(s,i){
+      var chip=document.createElement('div');
+      chip.className='server-chip'+(i===0?' active':'');
+      chip.innerHTML='<span class="dot"></span>'+s.name;
+      chip.setAttribute('data-url',s.url);
+      chip.onclick=function(){
+        document.querySelectorAll('.server-chip').forEach(function(c){c.classList.remove('active')});
+        chip.classList.add('active');
+        loadServer(s.url);
+      };
+      bar.appendChild(chip);
+    });
+  }).catch(function(e){console.log('Server list error:',e)});
+  
+  function loadServer(url){
+    var wrap=document.getElementById('playerWrap');
+    if(!wrap)return;
+    var oldPlayer=wrap.querySelector('#player');
+    if(oldPlayer)oldPlayer.remove();
+    var iframe=document.createElement('iframe');
+    iframe.id='player';
+    iframe.src=url;
+    iframe.allow='autoplay;encrypted-media;picture-in-picture';
+    iframe.allowFullscreen=true;
+    iframe.style.cssText='width:100%;height:100%;border:none;position:absolute;inset:0;z-index:1';
+    wrap.appendChild(iframe);
+  }
+})();
+</script>
+</body>
+</html>
