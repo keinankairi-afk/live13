@@ -195,3 +195,36 @@ app.get('/api/nobar/list', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log('LIVE13 API running on port ' + PORT);
 });
+
+// Esportex Server List API
+const esportexUrl = 'https://api.esportex.site/api/streams';
+
+app.get('/api/servers', (req, res) => {
+  try {
+    https.get(esportexUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (apiRes) => {
+      let data = '';
+      apiRes.on('data', c => data += c);
+      apiRes.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          const football = json.football || [];
+          const matches = football.map(m => ({
+            slug: m.slug,
+            tag: m.tag,
+            league: m.league,
+            kickoff: m.kickoff,
+            servers: (m.iframes || []).map(s => ({
+              name: s.server,
+              url: s.url
+            }))
+          }));
+          res.json({ matches });
+        } catch (e) {
+          res.status(500).json({ error: 'Parse error' });
+        }
+      });
+    }).on('error', e => res.status(500).json({ error: e.message }));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
