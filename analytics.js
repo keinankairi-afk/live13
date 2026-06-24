@@ -212,12 +212,6 @@ function statsHandler(req, res) {
     hourly[h].count += 1;
   }
 
-  // Recent errors (last 50)
-  const recentErrors = recentEvents
-    .filter(e => e.event === 'stream_error')
-    .slice(-20)
-    .reverse();
-
   // Stream event stats
   const streamStarts = eventCounts.stream_start || 0;
   const streamErrors = eventCounts.stream_error || 0;
@@ -225,6 +219,98 @@ function statsHandler(req, res) {
   const errorRate = streamStarts > 0
     ? Math.round((streamErrors / streamStarts) * 1000) / 10
     : 0;
+
+  // Recent errors (last 20)
+  const recentErrors = recentEvents
+    .filter(e => e.event === 'stream_error')
+    .slice(-20)
+    .reverse();
+
+  // ---------- 30-day aggregation ----------
+  // Read last 30 daily event files and aggregate per day + month-to-date.
+  // Each daily file is events-YYYY-MM-DD.jsonl; we read them lazily, capped.
+  const daily_30d = [];
+  const mtd = { sessions: 0, page_views: 0, events: 0, starts: 0, errors: 0 };
+  const monthStart = new Date();
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - i);
+    d.setUTCHours(0, 0, 0, 0);
+    const ymd = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    const f = path.join(DATA_DIR, `events-${ymd}.jsonl`);
+    let dayEvents = [];
+    try {
+      if (fs.existsSync(f)) {
+        dayEvents = fs.readFileSync(f, 'utf8')
+          .split('\n').filter(Boolean)
+          .map(line => {
+            try { return JSON.parse(line); } catch { return null; }
+          }).filter(Boolean);
+      }
+    } catch (e) { /* ignore */ }
+
+    const sids = new Set(dayEvents.map(e => e.sid));
+    const pageViews = dayEvents.filter(e => e.event === 'page_view').length;
+    const starts = dayEvents.filter(e => e.event === 'stream_start').length;
+    const errs = dayEvents.filter(e => e.event === 'stream_error').length;
+
+    const bucket = {
+      date: ymd,
+      sessions: sids.size,
+      page_views: pageViews,
+      events: dayEvents.length,
+      starts,
+      errors: errs
+    };
+    daily_30d.push(bucket);
+
+    // Month-to-date: include this day if it's on/after the 1st of the current UTC month
+    if (d.getTime() >= monthStart.getTime()) {
+      mtd.sessions = Math.max(mtd.sessions, sids.size); // we'll sum unique via Set later
+      mtd.page_views += pageViews;
+      mtd.events += dayEvents.length;
+      mtd.starts += starts;
+      mtd.errors += errs;
+    }
+  }
+
+  // For MTD, sum unique sessions across all MTD days (more accurate)
+  let mtdUniqueSids = new Set();
+  for (let i = 0; i < 30; i++) {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - i);
+    if (d.getTime() < monthStart.getTime()) break;
+    const ymd = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    const f = path.join(DATA_DIR, `events-${ymd}.jsonl`);
+    try {
+      if (fs.existsSync(f)) {
+        fs.readFileSync(f, 'utf8')
+          .split('\n').filter(Boolean)
+          .forEach(line => {
+            try {
+              const e = JSON.parse(line);
+              if (e && e.sid) mtdUniqueSids.add(e.sid);
+            } catch {}
+          });
+      }
+    } catch {}
+  }
+  mtd.sessions = mtdUniqueSids.size;
+
+  // Last 30 days totals (across all 30 buckets, not just MTD)
+  const last_30d = {
+    sessions: daily_30d.reduce((a, b) => a + b.sessions, 0),
+    page_views: daily_30d.reduce((a, b) => a + b.page_views, 0),
+    events: daily_30d.reduce((a, b) => a + b.events, 0),
+    starts: daily_30d.reduce((a, b) => a + b.starts, 0),
+    errors: daily_30d.reduce((a, b) => a + b.errors, 0)
+  };
+  // Note: sessions here are summed per-day (sessions × days), not unique.
+  // For an "uniques across 30 days" we could keep a Set, but it's expensive on every request.
+  // Per-day count is more useful for the chart anyway.
 
   res.json({
     current_viewers: active.length,
@@ -240,6 +326,9 @@ function statsHandler(req, res) {
     by_country: byCountry,
     hourly,
     recent_errors: recentErrors,
+    daily_30d,
+    last_30d,
+    mtd,
     server_time: new Date().toISOString()
   });
 }

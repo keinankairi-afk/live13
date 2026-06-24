@@ -69,6 +69,7 @@
 
   /* CHART (pure CSS bar chart) */
   .bars{display:flex;align-items:flex-end;gap:2px;height:120px;margin-top:12px}
+  .bars-30{height:140px;gap:1px}
   .bars .bar{flex:1;background:var(--accent);border-radius:2px 2px 0 0;
     min-height:1px;opacity:.85;transition:opacity .15s,transform .15s;position:relative}
   .bars .bar:hover{opacity:1;transform:scaleY(1.02)}
@@ -155,26 +156,58 @@
     </div>
   </div>
 
-  <!-- ROW 2: hourly + country -->
+  <!-- ROW 1.5: 30-day totals + MTD -->
+  <div class="grid">
+    <div class="card">
+      <div class="label">Visitors — last 30 days</div>
+      <div class="value" id="v30">0</div>
+      <div class="sub">Σ unique sessions per day</div>
+    </div>
+    <div class="card">
+      <div class="label">Page views — last 30 days</div>
+      <div class="value" id="pv30">0</div>
+      <div class="sub">Σ page_view events</div>
+    </div>
+    <div class="card">
+      <div class="label">MTD visitors</div>
+      <div class="value" id="mtdv">0</div>
+      <div class="sub" id="mtd-range">Month-to-date (UTC)</div>
+    </div>
+    <div class="card">
+      <div class="label">MTD page views</div>
+      <div class="value" id="mtdpv">0</div>
+      <div class="sub" id="mtd-starts">-- starts</div>
+    </div>
+  </div>
+
+  <!-- ROW 2: 30-day chart + today hourly -->
   <div class="grid">
     <div class="card col-3">
-      <div class="label">Events per hour (UTC, today)</div>
+      <div class="label">Daily visitors — last 30 days <span style="color:var(--text4);font-weight:500;text-transform:none;letter-spacing:0">UTC</span></div>
+      <div class="bars bars-30" id="daily30"></div>
+      <div class="x-axis"><span id="d30-start">--</span><span id="d30-mid">--</span><span id="d30-end">--</span></div>
+    </div>
+    <div class="card">
+      <div class="label">Today (UTC hours)</div>
       <div class="bars" id="hourly"></div>
       <div class="x-axis"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
     </div>
+  </div>
+
+  <!-- ROW 3: countries + events + errors -->
+  <div class="grid">
     <div class="card">
       <div class="label">Top countries (today)</div>
       <div class="list" id="countries"></div>
     </div>
-  </div>
-
-  <!-- ROW 3: events + errors -->
-  <div class="grid">
     <div class="card col-2">
       <div class="label">Event counts (today)</div>
       <div class="list" id="events"></div>
     </div>
-    <div class="card col-2">
+  </div>
+
+  <div class="grid">
+    <div class="card col-3">
       <div class="label">Recent stream errors</div>
       <div id="errors"></div>
     </div>
@@ -200,6 +233,23 @@ function renderBars(hourly) {
     const zero = h.count === 0 ? ' zero' : '';
     return `<div class="bar${zero}" style="height:${pct}%" data-tip="${String(i).padStart(2,'0')}:00 — ${fmt(h.count)} events"></div>`;
   }).join('');
+}
+
+function renderDaily30(days) {
+  const max = Math.max(1, ...days.map(d => d.sessions));
+  const el = $('#daily30');
+  el.innerHTML = days.map(d => {
+    const pct = (d.sessions / max) * 100;
+    const zero = d.sessions === 0 ? ' zero' : '';
+    const dStr = d.date.slice(5); // MM-DD
+    return `<div class="bar${zero}" style="height:${pct}%" data-tip="${dStr} — ${fmt(d.sessions)} visitors, ${fmt(d.page_views)} views"></div>`;
+  }).join('');
+  // X-axis labels
+  if (days.length > 0) {
+    $('#d30-start').textContent = days[0].date.slice(5);
+    $('#d30-mid').textContent    = days[Math.floor(days.length/2)].date.slice(5);
+    $('#d30-end').textContent   = days[days.length-1].date.slice(5);
+  }
 }
 
 function renderList(elId, items, valueKey='n') {
@@ -263,7 +313,21 @@ async function refresh() {
     $('#errrate').innerHTML = (s.stream.error_rate_pct || 0).toFixed(1) + '<span class="unit">%</span>';
     $('#errs').textContent = fmt(s.stream.errors);
     $('#starts').textContent = fmt(s.stream.starts);
+    // 30-day + MTD
+    $('#v30').textContent = fmt(s.last_30d?.sessions);
+    $('#pv30').textContent = fmt(s.last_30d?.page_views);
+    $('#mtdv').textContent = fmt(s.mtd?.sessions);
+    $('#mtdpv').textContent = fmt(s.mtd?.page_views);
+    $('#mtd-starts').textContent = fmt(s.mtd?.starts) + ' starts · ' + fmt(s.mtd?.events) + ' events';
+    // MTD range label
+    if (s.mtd?.sessions !== undefined) {
+      const d = new Date();
+      const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+      const y = d.getUTCFullYear();
+      $('#mtd-range').textContent = y + '-' + m + ' (so far)';
+    }
     renderBars(s.hourly);
+    renderDaily30(s.daily_30d || []);
     renderCountries(s.by_country);
     renderEvents(s.event_counts);
     renderErrors(s.recent_errors);
