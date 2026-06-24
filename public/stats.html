@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LIVE13 — Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --bg:#000;--bg2:#0a0a0a;--bg3:#111;--bg4:#1a1a1a;
+    --border:#222;--border2:#333;
+    --text:#fff;--text2:#a1a1aa;--text3:#666;--text4:#52525b;
+    --accent:#a3e635;--accent2:#84cc16;
+    --red:#ef4444;--red-bg:rgba(239,68,68,.12);
+    --amber:#f59e0b;--blue:#3b82f6;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);
+    font-family:'Geist',system-ui,sans-serif;font-feature-settings:"ss01";
+    -webkit-font-smoothing:antialiased;line-height:1.5;min-height:100vh}
+  code,mono{font-family:'Geist Mono',ui-monospace,monospace}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  /* NAV */
+  .nav{position:sticky;top:0;z-index:10;background:rgba(0,0,0,.8);
+    backdrop-filter:blur(12px);border-bottom:1px solid var(--border)}
+  .nav-inner{max-width:1280px;margin:0 auto;padding:0 24px;height:56px;
+    display:flex;align-items:center;justify-content:space-between}
+  .nav-brand{display:flex;align-items:center;gap:8px}
+  .nav-mark{font-family:'Geist Mono',monospace;font-weight:700;font-size:13px;
+    color:var(--bg);background:var(--accent);padding:4px 8px;border-radius:4px;
+    letter-spacing:-.02em}
+  .nav-title{font-size:15px;font-weight:700;letter-spacing:-.03em}
+  .nav-right{display:flex;align-items:center;gap:16px;font-size:12px;color:var(--text3)}
+  .nav-right .live{display:flex;align-items:center;gap:6px;font-family:'Geist Mono',monospace;
+    font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+  .nav-right .live-dot{width:6px;height:6px;background:var(--accent);border-radius:50%;
+    animation:pulse 1.5s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* LAYOUT */
+  .wrap{max-width:1280px;margin:0 auto;padding:24px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+  @media(max-width:980px){.grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr}}
+
+  .col-2{grid-column:span 2}
+  .col-3{grid-column:span 3}
+  .col-4{grid-column:span 4}
+  @media(max-width:980px){.col-2,.col-3{grid-column:span 2}.col-4{grid-column:span 2}}
+  @media(max-width:560px){.col-2,.col-3,.col-4{grid-column:span 1}}
+
+  /* CARD */
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+    padding:20px;position:relative;overflow:hidden}
+  .card .label{font-size:11px;font-weight:600;color:var(--text3);
+    text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;
+    display:flex;align-items:center;justify-content:space-between}
+  .card .value{font-size:32px;font-weight:600;letter-spacing:-.02em;line-height:1.1;
+    font-feature-settings:"tnum"}
+  .card .sub{font-size:12px;color:var(--text3);margin-top:6px}
+  .card .value .unit{font-size:14px;font-weight:500;color:var(--text3);margin-left:4px}
+  .card.hero .value{font-size:48px}
+  .card.hero .value .pulse-dot{display:inline-block;width:10px;height:10px;
+    background:var(--accent);border-radius:50%;margin-right:10px;
+    animation:pulse 1.5s infinite;vertical-align:middle}
+  .card.error .value{color:var(--red)}
+
+  /* CHART (pure CSS bar chart) */
+  .bars{display:flex;align-items:flex-end;gap:2px;height:120px;margin-top:12px}
+  .bars .bar{flex:1;background:var(--accent);border-radius:2px 2px 0 0;
+    min-height:1px;opacity:.85;transition:opacity .15s,transform .15s;position:relative}
+  .bars .bar:hover{opacity:1;transform:scaleY(1.02)}
+  .bars .bar.zero{background:var(--border2);opacity:.4}
+  .bars .bar[data-tip]:hover::after{content:attr(data-tip);position:absolute;
+    bottom:100%;left:50%;transform:translateX(-50%);background:#000;color:var(--text);
+    border:1px solid var(--border2);padding:3px 8px;border-radius:4px;font-size:11px;
+    white-space:nowrap;margin-bottom:4px;font-family:'Geist Mono',monospace}
+  .x-axis{display:flex;justify-content:space-between;margin-top:6px;font-size:10px;
+    color:var(--text4);font-family:'Geist Mono',monospace}
+
+  /* LIST */
+  .list{display:flex;flex-direction:column;gap:0;margin-top:8px}
+  .list .row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;
+    padding:8px 0;border-bottom:1px solid var(--border);
+    font-size:13px;align-items:center}
+  .list .row:last-child{border-bottom:0}
+  .list .row .k{font-family:'Geist Mono',monospace;font-size:11px;
+    padding:2px 6px;background:var(--bg3);border-radius:3px;color:var(--text2);
+    min-width:60px;text-align:center}
+  .list .row .v{color:var(--text);overflow:hidden;text-overflow:ellipsis;
+    white-space:nowrap;font-size:12px}
+  .list .row .n{font-family:'Geist Mono',monospace;font-size:12px;color:var(--accent);
+    font-weight:600;font-variant-numeric:tabular-nums}
+  .list .row .bar-mini{grid-column:1/-1;height:2px;background:var(--bg3);
+    border-radius:1px;overflow:hidden;margin-top:2px}
+  .list .row .bar-mini .fill{height:100%;background:var(--accent);border-radius:1px;
+    transition:width .3s}
+
+  /* ERRORS */
+  .err-row{font-family:'Geist Mono',monospace;font-size:11px;color:var(--text2);
+    padding:6px 0;border-bottom:1px solid var(--border);
+    display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+  .err-row:last-child{border-bottom:0}
+  .err-row .t{color:var(--text4);font-size:10px}
+  .err-row .type{color:var(--red);font-weight:600;text-transform:uppercase}
+  .empty{color:var(--text4);font-size:12px;padding:20px 0;text-align:center;
+    font-style:italic}
+
+  /* HINT BAR */
+  .hint{background:var(--bg2);border:1px dashed var(--border2);border-radius:8px;
+    padding:12px 16px;font-size:12px;color:var(--text3);margin-top:16px;
+    display:flex;align-items:center;gap:10px}
+  .hint code{background:var(--bg3);padding:2px 6px;border-radius:3px;
+    color:var(--text2);font-size:11px}
+
+  .footer{text-align:center;color:var(--text4);font-size:11px;padding:24px 0;
+    font-family:'Geist Mono',monospace}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">
+      <span class="nav-mark">L13</span>
+      <span class="nav-title">Analytics</span>
+    </div>
+    <div class="nav-right">
+      <span class="live"><span class="live-dot"></span>LIVE</span>
+      <span id="clock">--:--:-- UTC</span>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+
+  <!-- ROW 1: hero metrics -->
+  <div class="grid">
+    <div class="card hero col-2">
+      <div class="label">Concurrent viewers <span id="updated">--</span></div>
+      <div class="value" id="viewers"><span class="pulse-dot"></span>0</div>
+      <div class="sub">Sesi aktif heartbeat &lt; 90 detik</div>
+    </div>
+    <div class="card">
+      <div class="label">Sessions today</div>
+      <div class="value" id="sessions">0</div>
+      <div class="sub">Unique visitor ID</div>
+    </div>
+    <div class="card error">
+      <div class="label">Stream error rate</div>
+      <div class="value" id="errrate">0.0<span class="unit">%</span></div>
+      <div class="sub"><span id="errs">0</span> errors / <span id="starts">0</span> starts</div>
+    </div>
+  </div>
+
+  <!-- ROW 2: hourly + country -->
+  <div class="grid">
+    <div class="card col-3">
+      <div class="label">Events per hour (UTC, today)</div>
+      <div class="bars" id="hourly"></div>
+      <div class="x-axis"><span>00</span><span>06</span><span>12</span><span>18</span><span>23</span></div>
+    </div>
+    <div class="card">
+      <div class="label">Top countries (today)</div>
+      <div class="list" id="countries"></div>
+    </div>
+  </div>
+
+  <!-- ROW 3: events + errors -->
+  <div class="grid">
+    <div class="card col-2">
+      <div class="label">Event counts (today)</div>
+      <div class="list" id="events"></div>
+    </div>
+    <div class="card col-2">
+      <div class="label">Recent stream errors</div>
+      <div id="errors"></div>
+    </div>
+  </div>
+
+  <div class="hint">
+    💡 <span>Tracker auto-loaded via <code>&lt;script src="/tracker.js"&gt;</code>. Events: <code>page_view</code>, <code>stream_start/pause/resume/end/error</code>, <code>channel_switch</code>, <code>quality_change</code>, <code>heartbeat</code>, <code>tab_hide/show</code>, <code>unload</code>.</span>
+  </div>
+
+  <div class="footer">LIVE13 analytics · auto-refresh every 5s · <a href="/api/stats" target="_blank">/api/stats</a> (JSON)</div>
+</main>
+
+<script>
+const REFRESH_MS = 5000;
+const fmt = (n) => (n || 0).toLocaleString('id-ID');
+const $ = (s) => document.querySelector(s);
+
+function renderBars(hourly) {
+  const max = Math.max(1, ...hourly.map(h => h.count));
+  const el = $('#hourly');
+  el.innerHTML = hourly.map((h, i) => {
+    const pct = (h.count / max) * 100;
+    const zero = h.count === 0 ? ' zero' : '';
+    return `<div class="bar${zero}" style="height:${pct}%" data-tip="${String(i).padStart(2,'0')}:00 — ${fmt(h.count)} events"></div>`;
+  }).join('');
+}
+
+function renderList(elId, items, valueKey='n') {
+  const el = document.getElementById(elId);
+  if (!items.length) {
+    el.innerHTML = '<div class="empty">No data yet</div>';
+    return;
+  }
+  const max = Math.max(1, ...items.map(i => i[valueKey]));
+  el.innerHTML = items.map(i => `
+    <div class="row">
+      <div class="k">${i.k}</div>
+      <div class="v">${i.label || ''}</div>
+      <div class="n">${fmt(i[valueKey])}</div>
+      <div class="bar-mini"><div class="fill" style="width:${(i[valueKey]/max)*100}%"></div></div>
+    </div>
+  `).join('');
+}
+
+function renderEvents(counts) {
+  const items = Object.entries(counts)
+    .map(([k, n]) => ({ k, n, label: k.replace(/_/g,' ') }))
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 12);
+  renderList('events', items);
+}
+
+function renderCountries(byCountry) {
+  const flag = { ID: '🇮🇩', MY: '🇲🇾', SG: '🇸🇬', US: '🇺🇸', ZZ: '🌐' };
+  const items = Object.entries(byCountry)
+    .map(([k, n]) => ({ k: k === 'ZZ' ? '??' : k, n, label: (flag[k] || '🌍') + ' ' + k }))
+    .sort((a, b) => b.n - a.n)
+    .slice(0, 8);
+  renderList('countries', items);
+}
+
+function renderErrors(errs) {
+  const el = $('#errors');
+  if (!errs.length) {
+    el.innerHTML = '<div class="empty">No errors in the recent window 🎉</div>';
+    return;
+  }
+  el.innerHTML = errs.map(e => {
+    const d = new Date(e.t);
+    const tStr = d.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    return `<div class="err-row">
+      <span class="t">${tStr}</span>
+      <span><span class="type">${e.data?.type || 'unknown'}</span> · ${e.data?.detail || e.data?.url || ''}</span>
+      <span style="color:var(--text4)">${e.sid.slice(0, 6)}</span>
+    </div>`;
+  }).join('');
+}
+
+async function refresh() {
+  try {
+    const r = await fetch('/api/stats', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const s = await r.json();
+    $('#viewers').innerHTML = '<span class="pulse-dot"></span>' + fmt(s.current_viewers);
+    $('#sessions').textContent = fmt(s.total_sessions_today);
+    $('#errrate').innerHTML = (s.stream.error_rate_pct || 0).toFixed(1) + '<span class="unit">%</span>';
+    $('#errs').textContent = fmt(s.stream.errors);
+    $('#starts').textContent = fmt(s.stream.starts);
+    renderBars(s.hourly);
+    renderCountries(s.by_country);
+    renderEvents(s.event_counts);
+    renderErrors(s.recent_errors);
+    const now = new Date();
+    $('#clock').textContent = now.toISOString().substring(11, 19) + ' UTC';
+    const sec = Math.round((Date.now() - new Date(s.server_time).getTime()) / 1000);
+    $('#updated').textContent = sec < 5 ? 'now' : sec + 's ago';
+  } catch (e) {
+    $('#updated').textContent = '⚠ ' + e.message;
+  }
+}
+
+refresh();
+setInterval(refresh, REFRESH_MS);
+</script>
+</body>
+</html>

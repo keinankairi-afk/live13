@@ -217,6 +217,16 @@ app.get('/api/servers', (req, res) => {
   }
 });
 
+// Analytics — mount before listen
+const analytics = require('./analytics');
+analytics.mount(app);
+
+// Dashboard route — explicit to allow /stats (no .html)
+app.get('/stats', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(__dirname, 'public', 'stats.html'));
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`LIVE13 API running on port ${PORT}`);
 });

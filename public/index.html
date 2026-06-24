@@ -621,5 +621,113 @@ loadData();
 setInterval(loadData,300000);
 </script>
 <script src="/server-selector.js"></script>
+
+<!-- Live13 analytics: tracker auto-loaded, then hook into player events -->
+<script src="/tracker.js" defer></script>
+<script>
+// Wait for tracker to be ready, then wire up player event tracking
+function wireAnalytics() {
+  const T = window.live13Tracker;
+  if (!T) return setTimeout(wireAnalytics, 200);
+
+  const player = document.getElementById('player');
+  if (!player) return;
+
+  // Track first actual playback as stream_start
+  let firstPlay = true;
+  let lastErrorAt = 0;
+
+  player.addEventListener('playing', () => {
+    if (firstPlay) {
+      firstPlay = false;
+      T.streamStart(streamUrl ? streamUrl.split('/').slice(-1)[0] : 'unknown');
+    } else {
+      T.streamResume();
+    }
+  });
+
+  player.addEventListener('pause', () => T.streamPause());
+
+  player.addEventListener('ended', () => {
+    // approximate watched time = currentTime
+    T.streamEnd(Math.round((player.currentTime || 0) * 1000));
+  });
+
+  player.addEventListener('waiting', () => {
+    // buffering — useful to find CDN issues
+    T.track('stream_buffer', { at: Math.round(player.currentTime || 0) });
+  });
+
+  // HLS error tracking
+  if (window.Hls && window.Hls.Events) {
+    // Patch into existing hlsInstance error handler
+    const origOnError = hlsInstance && hlsInstance.on;
+    setTimeout(() => {
+      if (typeof hlsInstance !== 'undefined' && hlsInstance && hlsInstance.on) {
+        hlsInstance.on(Hls.Events.ERROR, (_, d) => {
+          const now = Date.now();
+          // throttle: max 1 error per 2s per client
+          if (now - lastErrorAt < 2000) return;
+          lastErrorAt = now;
+          T.streamError(d.type || 'fatal', d.details || d.reason || 'unknown');
+        });
+      }
+    }, 500);
+  }
+
+  // Mute / fullscreen / PiP — wrap existing functions
+  const origToggleMute = window.toggleMute;
+  if (origToggleMute) {
+    window.toggleMute = function () {
+      origToggleMute.apply(this, arguments);
+      T.track('mute_toggle', { muted: player.muted });
+    };
+  }
+  const origGoFullscreen = window.goFullscreen;
+  if (origGoFullscreen) {
+    window.goFullscreen = function () {
+      origGoFullscreen.apply(this, arguments);
+      T.track('fullscreen_enter');
+    };
+  }
+  const origTogglePiP = window.togglePiP;
+  if (origTogglePiP) {
+    window.togglePiP = function () {
+      origTogglePiP.apply(this, arguments);
+      T.track('pip_toggle', { active: !document.pictureInPictureElement });
+    };
+  }
+  const origToggleMini = window.toggleMiniPlayer;
+  if (origToggleMini) {
+    window.toggleMiniPlayer = function () {
+      origToggleMini.apply(this, arguments);
+      T.track('mini_player_toggle', { active: !miniActive });
+    };
+  }
+
+  // Channel switch — wraps loadLiveStream
+  const origLoad = window.loadLiveStream;
+  if (origLoad) {
+    let lastUrl = null;
+    window.loadLiveStream = async function () {
+      await origLoad.apply(this, arguments);
+      if (streamUrl && streamUrl !== lastUrl) {
+        T.channelSwitch(
+          lastUrl ? lastUrl.split('/').slice(-1)[0] : null,
+          streamUrl.split('/').slice(-1)[0]
+        );
+        lastUrl = streamUrl;
+      }
+    };
+  }
+
+  console.log('[live13] analytics wired');
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', wireAnalytics);
+} else {
+  wireAnalytics();
+}
+</script>
 </body>
 </html>
