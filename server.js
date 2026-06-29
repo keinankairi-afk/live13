@@ -193,16 +193,52 @@ app.get('/api/servers', (req, res) => {
         try {
           const json = JSON.parse(data);
           const football = json.football || [];
+          const now = Date.now();
+
+          // Parse kickoff ("2026-06-25 05:00") → epoch ms (treat as UTC)
+          const toMs = (s) => {
+            if (!s) return null;
+            const iso = s.replace(' ', 'T') + 'Z';
+            const t = Date.parse(iso);
+            return isNaN(t) ? null : t;
+          };
+
+          // Score: lower = better. Live matches first, then upcoming closest.
+          const score = (m) => {
+            const ko = toMs(m.kickoff);
+            const end = toMs(m.endTime);
+            if (!ko) return 1e15;
+            const isLive = end && ko <= now && now <= end;
+            if (isLive) return ko - now;          // live: stable order by kickoff
+            if (ko > now) return ko - now + 1e9;  // upcoming: closest first, but after live
+            return 1e15;                          // finished: dead last
+          };
+
+          const sorted = [...football].sort((a, b) => score(a) - score(b));
+
+          // Score individual server: HD/FHD first, then VIP/COM, then rest
+          const serverScore = (name) => {
+            const n = (name || '').toUpperCase();
+            if (n.includes('FHD')) return 0;
+            if (n.includes('HD+')) return 1;
+            if (n.includes('HD1')) return 2;
+            if (n.includes('HD')) return 3;
+            if (n.includes('VIP')) return 4;
+            if (n.includes('COM')) return 5;
+            if (n.includes('SD')) return 99;
+            return 50;
+          };
+
           const result = {
-            matches: football.map(m => ({
+            matches: sorted.map(m => ({
               slug: m.slug,
               tag: m.tag,
               league: m.league,
               kickoff: m.kickoff,
-              servers: (m.iframes || []).map(s => ({
-                name: s.server,
-                url: s.url
-              }))
+              servers: (m.iframes || [])
+                .map(s => ({ name: s.server, url: s.url, _q: serverScore(s.server) }))
+                .sort((a, b) => a._q - b._q)
+                .map(({ name, url }) => ({ name, url }))
             }))
           };
           serversCache = { data: result, ts: Date.now() };

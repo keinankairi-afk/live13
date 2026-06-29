@@ -61,6 +61,9 @@ body{overflow-x:hidden;background:var(--bg);color:var(--text);font-family:'Geist
 
 /* VIDEO PLAYER */
 .player-col{overflow:hidden;min-width:0}
+.player-hint{display:flex;align-items:center;gap:8px;padding:10px 14px;margin-top:8px;font-family:'Geist',system-ui,sans-serif;font-size:12px;color:var(--text3);background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:8px;line-height:1.4}
+.player-hint .hint-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;animation:pulse 2s infinite}
+.player-hint b{color:var(--text2);font-weight:600}
 .player-wrap{position:relative;width:100%;max-width:100%;aspect-ratio:16/9;background:var(--bg2);border-radius:12px;overflow:hidden;border:1px solid var(--border)}
 .player-wrap video{width:100%;height:100%;object-fit:contain;background:#000}
 .player-bar{position:absolute;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;align-items:flex-start;z-index:5;background:linear-gradient(180deg,rgba(0,0,0,.7),transparent)}
@@ -273,6 +276,12 @@ body{overflow-x:hidden;background:var(--bg);color:var(--text);font-family:'Geist
         <div class="play-btn" id="playBtn" onclick="playStream()">
           <svg viewBox="0 0 24 24" fill="#000"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         </div>
+      </div>
+
+      <!-- Player Hint -->
+      <div class="player-hint">
+        <span class="hint-dot"></span>
+        <span>Tap tombol play <b>▶</b> di dalam video beberapa kali sampai streaming jalan</span>
       </div>
 
 
@@ -531,14 +540,27 @@ window.addEventListener('load',()=>{
 });
 
 function updateMusicState(hasLive){
-  liveMatchActive=hasLive;
-  const btn=document.getElementById('musicBtn');
-  if(hasLive){
-    if(musicPlaying){bgMusic.pause();musicPlaying=false}
-    btn.classList.remove('playing');
-    if(musicEnabled)document.getElementById('musicLabel').textContent='Live Match';
+    liveMatchActive=hasLive;
+    // If iframe server-selector is active, bg-music stays paused.
+    // Iframe audio is the primary source — no layering.
+    if (window.__iframePlayerActive) {
+      if (window.bgMusic) window.bgMusic.pause();
+      return;
+    }
+    const btn=document.getElementById('musicBtn');
+    if(hasLive){
+    // Streams from nobarlive88 are video-only (no audio track in m3u8).
+    // Duck bg-music to 0.08 instead of pausing — fills the silence.
+    // If user clicked Music Off (musicEnabled=false), respect that and stay paused.
+    if(musicEnabled){
+      if(!musicPlaying){bgMusic.play().then(()=>{musicPlaying=true}).catch(()=>{})}
+      bgMusic.volume=0.08;  // subtle background, won't interfere if stream ever has audio
+      btn.classList.add('playing');
+      document.getElementById('musicLabel').textContent='Live (no audio)';
+    }
   }else if(musicEnabled){
     if(!musicPlaying){bgMusic.play().then(()=>{musicPlaying=true}).catch(()=>{})}
+    bgMusic.volume=0.3;  // restore normal volume when no live match
     btn.classList.add('playing');
     document.getElementById('musicLabel').textContent='Playing';
   }
