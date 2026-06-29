@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>LIVE13 — Piala Dunia 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08080e;--bg2:#0e0e18;--card:#13131f;--card2:#1a1a2e;
+  --purple:#7c3aed;--purple-light:#a78bfa;--lime:#84cc16;
+  --red:#ef4444;--glow:rgba(124,58,237,.15);
+}
+body{background:var(--bg);color:#e5e7eb;font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden}
+.navbar{position:sticky;top:0;z-index:100;background:rgba(8,8,14,.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06)}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+.nav-logo{width:36px;height:36px;background:linear-gradient(135deg,var(--purple),var(--purple-light));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#fff}
+.nav-title{font-size:18px;font-weight:800;color:#fff;letter-spacing:-.5px}
+.nav-title span{color:var(--purple-light)}
+.nav-right{display:flex;align-items:center;gap:16px}
+.nav-link{color:#9ca3af;font-size:13px;font-weight:500;text-decoration:none;transition:color .2s}
+.nav-link:hover{color:#fff}
+.nav-link.active{color:var(--purple-light)}
+
+.container{max-width:1280px;margin:0 auto;padding:20px 24px 40px}
+.page-title{font-size:clamp(20px,3vw,28px);font-weight:900;color:#fff;margin-bottom:6px}
+.page-sub{font-size:13px;color:#6b7280;margin-bottom:24px}
+
+/* Tabs */
+.tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.tab{padding:8px 18px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#9ca3af;transition:all .2s}
+.tab:hover{background:rgba(255,255,255,.08);color:#fff}
+.tab.active{background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;border-color:transparent}
+.tab .badge{display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,.2);padding:1px 6px;border-radius:8px;font-size:10px;margin-left:5px}
+
+/* Cards */
+.card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.card-head{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between}
+.card-head h3{font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px}
+.card-head .count{font-size:11px;color:var(--purple-light);background:rgba(124,58,237,.12);padding:3px 10px;border-radius:12px}
+
+/* Match */
+.match{display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .2s;cursor:pointer}
+.match:last-child{border-bottom:none}
+.match:hover{background:rgba(124,58,237,.05)}
+.match.live{background:rgba(239,68,68,.04)}
+.match.live:hover{background:rgba(239,68,68,.08)}
+.match-time{min-width:56px;text-align:center}
+.match-time .t{font-size:13px;font-weight:700;color:#fff}
+.match-time .d{font-size:10px;color:#6b7280}
+.match-teams{flex:1;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+.match-teams .vs{color:#4b5563;font-size:11px;font-weight:400}
+.match-score{font-size:18px;font-weight:900;color:var(--purple-light);min-width:50px;text-align:center}
+.match-status{font-size:10px;font-weight:700;padding:3px 10px;border-radius:10px;min-width:60px;text-align:center}
+.match-status.live{background:rgba(239,68,68,.15);color:#ef4444;animation:pulse 2s infinite}
+.match-status.upcoming{background:rgba(124,58,237,.1);color:var(--purple-light)}
+.match-status.finished{background:rgba(255,255,255,.06);color:#6b7280}
+
+/* Groups */
+.groups-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.group-card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:14px;overflow:hidden}
+.group-name{padding:12px 16px;font-size:13px;font-weight:800;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:8px}
+.group-name .flag{font-size:16px}
+.group-table{width:100%;border-collapse:collapse}
+.group-table th{padding:8px 12px;font-size:10px;font-weight:700;color:#6b7280;text-align:left;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid rgba(255,255,255,.06)}
+.group-table td{padding:8px 12px;font-size:12px;font-weight:600;border-bottom:1px solid rgba(255,255,255,.03)}
+.group-table tr:last-child td{border-bottom:none}
+.group-table .pos{width:24px;text-align:center;font-weight:800;color:#fff}
+.group-table .pts{font-weight:900;color:var(--purple-light)}
+.group-table .team-cell{display:flex;align-items:center;gap:8px}
+.group-table .num{width:28px;text-align:center}
+
+/* Empty */
+.empty{padding:40px;text-align:center;color:#4b5563;font-size:14px}
+.empty svg{width:48px;height:48px;fill:#4b5563;opacity:.3;margin-bottom:12px}
+
+/* Loading */
+.loading{padding:40px;text-align:center;color:#6b7280;font-size:13px}
+.loading::after{content:'';display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.1);border-top-color:var(--purple);border-radius:50%;animation:spin .6s linear infinite;margin-left:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Particles */
+.particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.p{position:absolute;width:2px;height:2px;background:var(--purple-light);border-radius:50%;opacity:.3;animation:float linear infinite}
+@keyframes float{0%{transform:translateY(100vh) scale(0)}50%{opacity:.4}100%{transform:translateY(-10vh) scale(1)}}
+
+/* Footer */
+.footer{max-width:1280px;margin:0 auto;padding:20px 24px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.footer-left{font-size:12px;color:#4b5563}
+.footer-right{display:flex;gap:16px}
+.footer a{font-size:12px;color:#6b7280;text-decoration:none;transition:color .2s}
+.footer a:hover{color:var(--purple-light)}
+
+/* Responsive */
+@media(max-width:768px){
+  .nav-inner{padding:0 12px;height:52px}
+  .nav-logo{width:28px;height:28px;font-size:11px}
+  .nav-title{font-size:14px}
+  .container{padding:12px 12px 24px}
+  .page-title{font-size:18px}
+  .tabs{gap:6px}
+  .tab{padding:6px 12px;font-size:11px}
+  .match{padding:10px 12px;gap:8px}
+  .match-time .t{font-size:11px}
+  .match-teams{font-size:11px;gap:5px}
+  .match-score{font-size:13px;min-width:32px}
+  .match-status{font-size:8px;padding:2px 6px;min-width:50px}
+  .groups-grid{grid-template-columns:1fr}
+  .group-table td,.group-table th{padding:6px 8px;font-size:10px}
+  .footer{padding:12px;flex-direction:column;gap:6px;text-align:center}
+}
+</style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="/" class="nav-brand">
+      <div class="nav-logo">L13</div>
+      <div class="nav-title">LIVE<span>13</span></div>
+    </a>
+    <div class="nav-right">
+      <a href="/" class="nav-link">📺 Live</a>
+      <a href="/worldcup.html" class="nav-link active">⚽ Piala Dunia</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-title">🏆 Piala Dunia 2026</div>
+  <div class="page-sub">Hasil pertandingan, jadwal, dan klasemen grup</div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="results" onclick="switchTab('results')">🏆 Hasil <span class="badge" id="resultsCount">0</span></div>
+    <div class="tab" data-tab="upcoming" onclick="switchTab('upcoming')">📅 Jadwal <span class="badge" id="upcomingCount">0</span></div>
+    <div class="tab" data-tab="standings" onclick="switchTab('standings')">📊 Klasemen</div>
+  </div>
+
+  <!-- Results Tab -->
+  <div class="tab-content" id="tab-results">
+    <div class="card">
+      <div class="card-head">
+        <h3>🏆 Pertandingan Selesai</h3>
+        <span class="count" id="finishedBadge">0 pertandingan</span>
+      </div>
+      <div id="finishedMatches"><div class="loading">Memuat data...</div></div>
+    </div>
+  </div>
+
+  <!-- Upcoming Tab -->
+  <div class="tab-content" id="tab-upcoming" style="display:none">
+    <div class="card">
+      <div class="card-head">
+        <h3>📅 Pertandingan Mendatang</h3>
+        <span class="count" id="upcomingBadge">0 pertandingan</span>
+      </div>
+      <div id="upcomingMatches"><div class="loading">Memuat data...</div></div>
+    </div>
+  </div>
+
+  <!-- Standings Tab -->
+  <div class="tab-content" id="tab-standings" style="display:none">
+    <div class="groups-grid" id="groupsGrid"><div class="loading">Memuat klasemen...</div></div>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="footer-left">© 2026 LIVE13 — Nonton Piala Dunia Gratis</div>
+  <div class="footer-right">
+    <a href="https://saweria.co/losexyz" target="_blank">Donasi</a>
+    <a href="/">📺 Live TV</a>
+  </div>
+</div>
+
+<script>
+// Particles
+(function(){
+  const c=document.getElementById('particles');
+  for(let i=0;i<30;i++){
+    const p=document.createElement('div');
+    p.className='p';
+    p.style.left=Math.random()*100+'%';
+    p.style.animationDuration=(8+Math.random()*12)+'s';
+    p.style.animationDelay=Math.random()*8+'s';
+    p.style.width=p.style.height=(1+Math.random()*2)+'px';
+    c.appendChild(p);
+  }
+})();
+
+// Tabs
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(c=>c.style.display='none');
+  document.getElementById('tab-'+tab).style.display='block';
+}
+
+// FIFA API
+const API='https://api.fifa.com/api/v3/calendar/matches?language=en&count=500&idSeason=285023';
+
+// Team translations
+const TEAM_MAP={"Mexico":"Meksiko","South Africa":"South Africa","Korea Republic":"Korea Selatan","Czechia":"Czechia","Canada":"Kanada","Bosnia and Herzegovina":"Bosnia","Qatar":"Qatar","Switzerland":"Swiss","USA":"USA","Paraguay":"Paraguay","New Zealand":"Selandia Baru","Colombia":"Kolombia","Argentina":"Argentina","Japan":"Jepang","France":"Prancis","Germany":"Jerman","Spain":"Spanyol","Brazil":"Brazil","Portugal":"Portugal","England":"Inggris","Croatia":"Kroasia","Morocco":"Maroko","Senegal":"Senegal","Ghana":"Ghana","Panama":"Panama","Egypt":"Mesir","Uruguay":"Uruguay","Saudi Arabia":"Arab Saudi","Iran":"Iran","Ecuador":"Ekuador","Netherlands":"Belanda","Belgium":"Belgia","Ivory Coast":"Pantai Gading","Italy":"Italia","Norway":"Norwegia","Australia":"Australia","Denmark":"Denmark","Tunisia":"Tunisia","Austria":"Austria","Jordan":"Yordania","Congo DR":"DR Kongo","Serbia":"Serbia","Chile":"Chile","Peru":"Peru","Sweden":"Swedia","Iraq":"Irak","Costa Rica":"Kosta Rika","Jamaica":"Jamaica","Türkiye":"Turki","Haiti":"Haiti","Scotland":"Skotlandia","Wales":"Wales","Poland":"Poland","Angola":"Angola","Mali":"Mali","Nigeria":"Nigeria","Cameroon":"Kamerun","Algeria":"Algeria","China PR":"Tiongkok"};
+
+const FLAG_MAP={"Meksiko":"🇲🇽","South Africa":"🇿🇦","Korea Selatan":"🇰🇷","Czechia":"🇨🇿","Kanada":"🇨🇦","Bosnia":"🇧🇦","Qatar":"🇶🇦","Swiss":"🇨🇭","USA":"🇺🇸","Paraguay":"🇵🇾","Selandia Baru":"🇳🇿","Kolombia":"🇨🇴","Argentina":"🇦🇷","Jepang":"🇯🇵","Prancis":"🇫🇷","Jerman":"🇩🇪","Spanyol":"🇪🇸","Brazil":"🇧🇷","Portugal":"🇵🇹","Inggris":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Kroasia":"🇭🇷","Maroko":"🇲🇦","Senegal":"🇸🇳","Ghana":"🇬🇭","Panama":"🇵🇦","Mesir":"🇪🇬","Uruguay":"🇺🇾","Arab Saudi":"🇸🇦","Iran":"🇮🇷","Ekuador":"🇪🇨","Belanda":"🇳🇱","Belgia":"🇧🇪","Pantai Gading":"🇨🇮","Italia":"🇮🇹","Norwegia":"🇳🇴","Australia":"🇦🇺","Denmark":"🇩🇰","Tunisia":"🇹🇳","Austria":"🇦🇹","Yordania":"🇯🇴","DR Kongo":"🇨🇩","Serbia":"🇷🇸","Chile":"🇨🇱","Peru":"🇵🇪","Swedia":"🇸🇪","Irak":"🇮🇶","Kosta Rika":"🇨🇷","Jamaica":"🇯🇲","Turki":"🇹🇷","Haiti":"🇭🇹","Skotlandia":"🏴󠁧󠁢󠁳󠁣󠁴󠁿","Wales":"🏴󠁧󠁢󠁷󠁬󠁳󠁿","Poland":"🇵🇱","Angola":"🇦🇴","Mali":"🇲🇱","Nigeria":"🇳🇬","Kamerun":"🇨🇲","Algeria":"🇩🇿","Tiongkok":"🇨🇳"};
+
+function getTeamName(team){
+  if(!team)return null;
+  const names=team.TeamName||[];
+  return names[0]?.Description||team.ShortClubName||null;
+}
+function getText(arr){return arr?.[0]?.Description||'';}
+
+async function loadMatches(){
+  try{
+    const res=await fetch(API);
+    const data=await res.json();
+    if(!data.Results)return;
+
+    const finished=[];
+    const upcoming=[];
+    const groups={};
+
+    for(const match of data.Results){
+      const homeName=getTeamName(match.Home);
+      const awayName=getTeamName(match.Away);
+      if(!homeName||!awayName)continue;
+
+      const home=TEAM_MAP[homeName]||homeName;
+      const away=TEAM_MAP[awayName]||awayName;
+      const homeScore=match.HomeTeamScore;
+      const awayScore=match.AwayTeamScore;
+      const groupName=getText(match.GroupName);
+      const stage=getText(match.StageName)||groupName;
+      const matchDate=match.Date||'';
+      const homeFlag=FLAG_MAP[home]||'🏳️';
+      const awayFlag=FLAG_MAP[away]||'🏳️';
+
+      // Determine status
+      let status='upcoming';
+      if(homeScore!==null&&awayScore!==null){
+        try{
+          const dt=new Date(matchDate);
+          const now=new Date();
+          const elapsed=(now-dt)/60000;
+          status=elapsed<120?'live':'finished';
+        }catch(e){status='finished';}
+      }
+
+      const entry={home,away,homeScore:homeScore||0,awayScore:awayScore||0,status,date:matchDate,homeFlag,awayFlag,stage,groupName};
+
+      if(status==='finished'||status==='live'){
+        finished.push(entry);
+      }else{
+        upcoming.push(entry);
+      }
+
+      // Group standings
+      if(groupName&&!stage.includes('Round')&&!stage.includes('Final')){
+        if(!groups[groupName])groups[groupName]=[];
+        const hTeam=groups[groupName].find(t=>t.name===home);
+        if(!hTeam)groups[groupName].push({name:home,flag:homeFlag,w:0,d:0,l:0,gf:0,ga:0,pts:0});
+        const aTeam=groups[groupName].find(t=>t.name===away);
+        if(!aTeam)groups[groupName].push({name:away,flag:awayFlag,w:0,d:0,l:0,gf:0,ga:0,pts:0});
+
+        if(status==='finished'){
+          const ht=groups[groupName].find(t=>t.name===home);
+          const at=groups[groupName].find(t=>t.name===away);
+          ht.gf+=homeScore;ht.ga+=awayScore;
+          at.gf+=awayScore;at.ga+=homeScore;
+          if(homeScore>awayScore){ht.w++;ht.pts+=3;at.l++}
+          else if(homeScore<awayScore){at.w++;at.pts+=3;ht.l++}
+          else{ht.d++;at.d++;ht.pts++;at.pts++}
+        }
+      }
+    }
+
+    // Sort
+    finished.sort((a,b)=>{
+      try{return new Date(b.date)-new Date(a.date)}catch(e){return 0}
+    });
+    upcoming.sort((a,b)=>{
+      try{return new Date(a.date)-new Date(b.date)}catch(e){return 0}
+    });
+
+    // Update counts
+    document.getElementById('resultsCount').textContent=finished.length;
+    document.getElementById('upcomingCount').textContent=upcoming.length;
+    document.getElementById('finishedBadge').textContent=finished.length+' pertandingan';
+    document.getElementById('upcomingBadge').textContent=upcoming.length+' pertandingan';
+
+    // Render finished
+    const finishedEl=document.getElementById('finishedMatches');
+    if(finished.length===0){
+      finishedEl.innerHTML='<div class="empty"><p>Belum ada pertandingan selesai</p></div>';
+    }else{
+      finishedEl.innerHTML=finished.map(m=>matchHTML(m)).join('');
+    }
+
+    // Render upcoming
+    const upcomingEl=document.getElementById('upcomingMatches');
+    if(upcoming.length===0){
+      upcomingEl.innerHTML='<div class="empty"><p>Tidak ada pertandingan mendatang</p></div>';
+    }else{
+      upcomingEl.innerHTML=upcoming.map(m=>matchHTML(m)).join('');
+    }
+
+    // Render standings
+    const groupsEl=document.getElementById('groupsGrid');
+    const groupNames=Object.keys(groups).sort();
+    if(groupNames.length===0){
+      groupsEl.innerHTML='<div class="empty"><p>Data klasemen tidak tersedia</p></div>';
+    }else{
+      // Sort teams in each group
+      for(const g of groupNames){
+        groups[g].sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf);
+      }
+      groupsEl.innerHTML=groupNames.map(g=>{
+        const teams=groups[g];
+        return `<div class="group-card">
+          <div class="group-name"><span class="flag">🏆</span> ${g}</div>
+          <table class="group-table">
+            <thead><tr><th>#</th><th>Tim</th><th class="num">M</th><th class="num">S</th><th class="num">K</th><th class="num">GM</th><th class="num">GK</th><th class="num">Poin</th></tr></thead>
+            <tbody>${teams.map((t,i)=>{
+              const mp=t.w+t.d+t.l;
+              return `<tr>
+                <td class="pos">${i+1}</td>
+                <td><div class="team-cell">${t.flag} ${t.name}</div></td>
+                <td class="num">${t.w}</td><td class="num">${t.d}</td><td class="num">${t.l}</td>
+                <td class="num">${t.gf}</td><td class="num">${t.ga}</td>
+                <td class="pts">${t.pts}</td>
+              </tr>`;
+            }).join('')}</tbody>
+          </table>
+        </div>`;
+      }).join('');
+    }
+
+  }catch(e){
+    console.error('Error:',e);
+    document.getElementById('finishedMatches').innerHTML='<div class="empty"><p>Gagal memuat data</p></div>';
+  }
+}
+
+function matchHTML(m){
+  const sc=m.status||'upcoming';
+  const st=m.status==='live'?'🔴 LIVE':m.status==='finished'?'FT':'Upcoming';
+  const score=m.homeScore!=null&&m.awayScore!=null?`${m.homeScore} - ${m.awayScore}`:'vs';
+  const time=m.date?new Date(m.date).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Jakarta'}):'TBD';
+  const dateStr=m.date?new Date(m.date).toLocaleDateString('id-ID',{day:'numeric',month:'short',timeZone:'Asia/Jakarta'}):'';
+  return `<div class="match ${sc}">
+    <div class="match-time"><div class="t">${time}</div><div class="d">${dateStr}</div></div>
+    <div class="match-teams">${m.homeFlag||'🏳️'} ${m.home||'TBD'} <span class="vs">vs</span> ${m.awayFlag||'🏳️'} ${m.away||'TBD'}</div>
+    <div class="match-score">${score}</div>
+    <div class="match-status ${sc}">${st}</div>
+  </div>`;
+}
+
+loadMatches();
+setInterval(loadMatches,300000); // Refresh every 5 min
+</script>
+</body>
+</html>

@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LIVE13 Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#12121a;--card2:#1a1a28;--purple:#7c3aed;--purple-light:#a78bfa;--lime:#84cc16;--red:#ef4444;--yellow:#eab308;--green:#22c55e;--blue:#3b82f6}
+body{background:var(--bg);color:#fff;font-family:'Inter',sans-serif;min-height:100vh}
+
+/* Login */
+.login-screen{position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:99999}
+.login-box{background:var(--card);border:1px solid rgba(124,58,237,.3);border-radius:20px;padding:40px;width:90%;max-width:400px;text-align:center}
+.login-icon{width:80px;height:80px;background:linear-gradient(135deg,var(--purple),var(--purple-light));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 20px}
+.login-title{font-size:24px;font-weight:800;margin-bottom:8px}
+.login-desc{font-size:13px;color:#9ca3af;margin-bottom:24px}
+.login-input{width:100%;padding:14px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:15px;margin-bottom:12px;outline:none;font-family:'Inter',sans-serif}
+.login-input:focus{border-color:var(--purple)}
+.login-input::placeholder{color:#6b7280}
+.login-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--purple),var(--purple-light));border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:all .2s}
+.login-btn:hover{transform:translateY(-2px);box-shadow:0 4px 20px rgba(124,58,237,.4)}
+.login-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
+
+/* Layout */
+.app{display:none}
+.app.show{display:flex}
+.sidebar{width:260px;background:var(--card);border-right:1px solid rgba(255,255,255,.05);min-height:100vh;padding:20px 0;position:fixed;left:0;top:0;bottom:0;overflow-y:auto}
+.sidebar-logo{padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:10px}
+.sidebar-logo h2{font-size:18px;font-weight:800}
+.sidebar-logo span{font-size:11px;color:var(--purple-light);background:rgba(124,58,237,.15);padding:2px 8px;border-radius:4px}
+.nav-section{padding:16px 20px 8px}
+.nav-label{font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;font-size:13px;font-weight:500;color:#9ca3af;transition:all .2s;border-left:3px solid transparent}
+.nav-item:hover{color:#fff;background:rgba(124,58,237,.05)}
+.nav-item.active{color:#fff;background:rgba(124,58,237,.1);border-left-color:var(--purple)}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+.nav-item .badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
+
+.main{margin-left:260px;flex:1;padding:24px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.topbar h1{font-size:24px;font-weight:800}
+.topbar-actions{display:flex;gap:10px}
+.topbar-btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;display:flex;align-items:center;gap:6px;transition:all .2s}
+.topbar-btn.primary{background:var(--purple);color:#fff}
+.topbar-btn.primary:hover{background:var(--purple-light)}
+.topbar-btn.outline{background:transparent;border:1px solid rgba(255,255,255,.15);color:#fff}
+.topbar-btn.outline:hover{border-color:var(--purple)}
+
+/* Cards */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:20px}
+.stat-card .stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:12px}
+.stat-card .stat-value{font-size:28px;font-weight:800;margin-bottom:4px}
+.stat-card .stat-label{font-size:12px;color:#6b7280}
+.stat-card .stat-change{font-size:11px;margin-top:4px;display:flex;align-items:center;gap:4px}
+.stat-card .stat-change.up{color:var(--green)}
+.stat-card .stat-change.down{color:var(--red)}
+
+/* Section */
+.section{background:var(--card);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:24px;margin-bottom:20px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.section-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+.section-badge{font-size:11px;background:rgba(124,58,237,.15);color:var(--purple-light);padding:2px 8px;border-radius:4px}
+
+/* Match Card */
+.match-list{display:flex;flex-direction:column;gap:12px}
+.match-card{background:var(--card2);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px;transition:all .2s}
+.match-card:hover{border-color:rgba(124,58,237,.3)}
+.match-card .match-teams{flex:1;display:flex;align-items:center;gap:12px}
+.match-card .team{display:flex;align-items:center;gap:8px;min-width:120px}
+.match-card .team-flag{font-size:24px}
+.match-card .team-name{font-size:13px;font-weight:600}
+.match-card .vs{font-size:11px;color:#6b7280;font-weight:700}
+.match-card .match-score{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,.3);border-radius:8px;padding:8px 16px}
+.match-card .score-num{font-size:24px;font-weight:800;min-width:30px;text-align:center;color:#fff}
+.match-card .score-sep{font-size:16px;color:#6b7280}
+.match-card .score-input{width:40px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;font-size:20px;font-weight:800;text-align:center;padding:6px;outline:none;font-family:'Inter',sans-serif}
+.match-card .score-input:focus{border-color:var(--purple)}
+.match-card .match-meta{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:80px}
+.match-card .match-status{font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px}
+.match-card .match-status.live{background:rgba(239,68,68,.15);color:var(--red)}
+.match-card .match-status.upcoming{background:rgba(59,130,246,.15);color:var(--blue)}
+.match-card .match-status.finished{background:rgba(34,197,94,.15);color:var(--green)}
+.match-card .match-time{font-size:11px;color:#6b7280}
+.match-card .match-actions{display:flex;gap:6px}
+.match-card .action-btn{width:32px;height:32px;border-radius:6px;border:1px solid rgba(255,255,255,.1);background:transparent;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s}
+.match-card .action-btn:hover{background:var(--purple);border-color:var(--purple)}
+.match-card .action-btn.danger:hover{background:var(--red);border-color:var(--red)}
+
+/* Add Match Form */
+.add-match{background:var(--card2);border:1px dashed rgba(124,58,237,.3);border-radius:12px;padding:20px;margin-bottom:16px;display:none}
+.add-match.show{display:block}
+.form-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.form-group{flex:1;min-width:150px}
+.form-label{font-size:11px;font-weight:600;color:#9ca3af;margin-bottom:6px;display:block}
+.form-input{width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:13px;outline:none;font-family:'Inter',sans-serif}
+.form-input:focus{border-color:var(--purple)}
+.form-select{width:100%;padding:10px 12px;background:var(--card);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:13px;outline:none;font-family:'Inter',sans-serif;cursor:pointer}
+.form-select option{background:var(--card)}
+.form-actions{display:flex;gap:10px;justify-content:flex-end}
+
+/* Channel List */
+.channel-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+.channel-card{background:var(--card2);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:16px;transition:all .2s}
+.channel-card:hover{border-color:rgba(124,58,237,.3)}
+.channel-card .channel-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.channel-card .channel-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--purple),var(--purple-light));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.channel-card .channel-name{font-size:14px;font-weight:700}
+.channel-card .channel-country{font-size:11px;color:#6b7280}
+.channel-card .channel-url{font-size:10px;color:#4b5563;word-break:break-all;background:rgba(0,0,0,.3);padding:6px 8px;border-radius:4px;margin-bottom:10px}
+.channel-card .channel-controls{display:flex;gap:6px}
+.channel-card .channel-toggle{position:relative;width:40px;height:22px;background:rgba(255,255,255,.1);border-radius:11px;cursor:pointer;transition:all .2s}
+.channel-card .channel-toggle.active{background:var(--green)}
+.channel-card .channel-toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:all .2s}
+.channel-card .channel-toggle.active::after{left:21px}
+
+/* Donation Settings */
+.donation-settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.donation-platform{background:var(--card2);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:20px}
+.donation-platform .platform-header{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.donation-platform .platform-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.donation-platform .platform-name{font-size:14px;font-weight:700}
+.donation-platform .platform-desc{font-size:11px;color:#6b7280}
+.donation-platform .platform-url{font-size:10px;color:var(--purple-light);word-break:break-all}
+
+/* Live Settings */
+.live-settings{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.setting-card{background:var(--card2);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:16px}
+.setting-card .setting-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.setting-card .setting-icon{font-size:20px}
+.setting-card .setting-title{font-size:13px;font-weight:700}
+.setting-card .setting-desc{font-size:11px;color:#6b7280;margin-bottom:12px}
+.setting-card .setting-toggle{position:relative;width:44px;height:24px;background:rgba(255,255,255,.1);border-radius:12px;cursor:pointer;transition:all .2s}
+.setting-card .setting-toggle.active{background:var(--green)}
+.setting-card .setting-toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:all .2s}
+.setting-card .setting-toggle.active::after{left:23px}
+
+/* Toast */
+.toast{position:fixed;top:20px;right:20px;background:var(--green);color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:99999;transform:translateX(120%);transition:transform .3s;display:flex;align-items:center;gap:8px}
+.toast.show{transform:translateX(0)}
+.toast.error{background:var(--red)}
+
+/* Responsive */
+@media(max-width:1024px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .live-settings{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0;padding:16px}
+  .stats-grid{grid-template-columns:1fr}
+  .match-card{flex-direction:column}
+}
+</style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="login-icon">🔐</div>
+    <div class="login-title">LIVE13 Admin</div>
+    <div class="login-desc">Masukkan password untuk mengakses panel admin</div>
+    <input class="login-input" id="loginPass" type="password" placeholder="Password" onkeypress="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">🔓 Login</button>
+    <div class="login-error" id="loginError">❌ Password salah!</div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div class="app" id="app">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <h2>📡 LIVE13</h2>
+      <span>ADMIN</span>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <span class="icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('matches')">
+        <span class="icon">⚽</span> Pertandingan
+        <span class="badge" id="matchBadge">0</span>
+      </div>
+      <div class="nav-item" onclick="showPage('channels')">
+        <span class="icon">📺</span> Channels
+      </div>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-label">Monetisasi</div>
+      <div class="nav-item" onclick="showPage('donations')">
+        <span class="icon">💰</span> Donasi
+      </div>
+      <div class="nav-item" onclick="showPage('ads')">
+        <span class="icon">📢</span> Iklan
+      </div>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-label">Settings</div>
+      <div class="nav-item" onclick="showPage('settings')">
+        <span class="icon">⚙️</span> Pengaturan
+      </div>
+      <div class="nav-item" onclick="doLogout()">
+        <span class="icon">🚪</span> Logout
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="topbar">
+      <h1 id="pageTitle">📊 Dashboard</h1>
+      <div class="topbar-actions">
+        <button class="topbar-btn outline" onclick="exportData()">📥 Export JSON</button>
+        <button class="topbar-btn primary" onclick="saveAll()">💾 Simpan Semua</button>
+      </div>
+    </div>
+
+    <!-- Dashboard Page -->
+    <div class="page" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(124,58,237,.15)">⚽</div>
+          <div class="stat-value" id="statMatches">0</div>
+          <div class="stat-label">Total Pertandingan</div>
+          <div class="stat-change up">▲ Live sekarang</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(239,68,68,.15)">📺</div>
+          <div class="stat-value" id="statChannels">1</div>
+          <div class="stat-label">Channels Aktif</div>
+          <div class="stat-change up">▲ RTB Go</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(34,197,94,.15)">💰</div>
+          <div class="stat-value" id="statDonations">Rp 0</div>
+          <div class="stat-label">Total Donasi</div>
+          <div class="stat-change up">▲ +Rp 0 hari ini</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(59,130,246,.15)">👥</div>
+          <div class="stat-value" id="statViewers">0</div>
+          <div class="stat-label">Viewers</div>
+          <div class="stat-change up">▲ Online sekarang</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">🔴 Pertandingan Live</div>
+          <span class="section-badge" id="liveCount">0 LIVE</span>
+        </div>
+        <div class="match-list" id="liveMatches"></div>
+      </div>
+    </div>
+
+    <!-- Matches Page -->
+    <div class="page" id="page-matches" style="display:none">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">⚽ Kelola Pertandingan</div>
+          <button class="topbar-btn primary" onclick="toggleAddMatch()">+ Tambah Match</button>
+        </div>
+        
+        <!-- Add Match Form -->
+        <div class="add-match" id="addMatchForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">🏠 Tim Home (Negara)</label>
+              <input class="form-input" id="homeTeam" placeholder="Contoh: Indonesia">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🏳️ Flag Emoji</label>
+              <input class="form-input" id="homeFlag" placeholder="🇮🇩" maxlength="4">
+            </div>
+            <div class="form-group">
+              <label class="form-label">⚽ Skor Home</label>
+              <input class="form-input score-input" id="homeScore" type="number" value="0" min="0">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">✈️ Tim Away (Negara)</label>
+              <input class="form-input" id="awayTeam" placeholder="Contoh: Malaysia">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🏳️ Flag Emoji</label>
+              <input class="form-input" id="awayFlag" placeholder="🇲🇾" maxlength="4">
+            </div>
+            <div class="form-group">
+              <label class="form-label">⚽ Skor Away</label>
+              <input class="form-input score-input" id="awayScore" type="number" value="0" min="0">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">📅 Tanggal & Waktu</label>
+              <input class="form-input" id="matchDate" type="datetime-local">
+            </div>
+            <div class="form-group">
+              <label class="form-label">📍 Status</label>
+              <select class="form-select" id="matchStatus">
+                <option value="upcoming">🕐 Upcoming</option>
+                <option value="live">🔴 LIVE</option>
+                <option value="finished">✅ Finished</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">🏟️ Stage</label>
+              <select class="form-select" id="matchStage">
+                <option value="小组赛">小组赛 (Group Stage)</option>
+                <option value="16强">16强 (Round of 16)</option>
+                <option value="四分之一决赛">四分之一决赛 (Quarter Final)</option>
+                <option value="半决赛">半决赛 (Semi Final)</option>
+                <option value="决赛">🏆 决赛 (Final)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="topbar-btn outline" onclick="toggleAddMatch()">Batal</button>
+            <button class="topbar-btn primary" onclick="addMatch()">⚽ Tambah Match</button>
+          </div>
+        </div>
+
+        <!-- Match List -->
+        <div class="match-list" id="allMatches"></div>
+      </div>
+    </div>
+
+    <!-- Channels Page -->
+    <div class="page" id="page-channels" style="display:none">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">📺 Kelola Channel</div>
+          <button class="topbar-btn primary" onclick="toggleAddChannel()">+ Tambah Channel</button>
+        </div>
+        
+        <!-- Add Channel Form -->
+        <div class="add-match" id="addChannelForm">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">📺 Nama Channel</label>
+              <input class="form-input" id="channelName" placeholder="Contoh: TVRI">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🌍 Negara</label>
+              <input class="form-input" id="channelCountry" placeholder="Contoh: Indonesia 🇮🇩">
+            </div>
+            <div class="form-group">
+              <label class="form-label">🔗 Stream URL (HLS)</label>
+              <input class="form-input" id="channelUrl" placeholder="https://...">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">📶 Quality</label>
+              <select class="form-select" id="channelQuality">
+                <option value="720p">720p HD</option>
+                <option value="480p">480p SD</option>
+                <option value="360p">360p Low</option>
+                <option value="1080p">1080p FHD</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">📂 Kategori</label>
+              <select class="form-select" id="channelCategory">
+                <option value="Piala Dunia">🏆 Piala Dunia</option>
+                <option value="TV Nasional">📺 TV Nasional</option>
+                <option value="Olahraga">⚽ Olahraga</option>
+                <option value="Internasional">🌍 Internasional</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="topbar-btn outline" onclick="toggleAddChannel()">Batal</button>
+            <button class="topbar-btn primary" onclick="addChannel()">📺 Tambah Channel</button>
+          </div>
+        </div>
+
+        <div class="channel-list" id="channelList"></div>
+      </div>
+    </div>
+
+    <!-- Donations Page -->
+    <div class="page" id="page-donations" style="display:none">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">💰 Pengaturan Donasi</div>
+        </div>
+        <div class="donation-settings">
+          <div class="donation-platform">
+            <div class="platform-header">
+              <div class="platform-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">💛</div>
+              <div>
+                <div class="platform-name">Saweria</div>
+                <div class="platform-desc">Platform donasi populer Indonesia</div>
+              </div>
+            </div>
+            <label class="form-label">🔗 URL Saweria</label>
+            <input class="form-input" id="saweriaUrl" placeholder="https://saweria.co/losexyz" style="margin-bottom:8px">
+            <label class="form-label">🔑 API Key (Webhook)</label>
+            <input class="form-input" id="saweriaKey" placeholder="Masukkan API key Saweria">
+          </div>
+          <div class="donation-platform">
+            <div class="platform-header">
+              <div class="platform-icon" style="background:#fff;color:#000">📱</div>
+              <div>
+                <div class="platform-name">QRIS</div>
+                <div class="platform-desc">QR code pembayaran universal</div>
+              </div>
+            </div>
+            <label class="form-label">🔗 URL QRIS</label>
+            <input class="form-input" id="qrisUrl" placeholder="https://...">
+            <label class="form-label">📷 QR Image URL</label>
+            <input class="form-input" id="qrisImage" placeholder="https://...qris.png">
+          </div>
+          <div class="donation-platform">
+            <div class="platform-header">
+              <div class="platform-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626)">❤️</div>
+              <div>
+                <div class="platform-name">Trakteer</div>
+                <div class="platform-desc">Platform donasi kreator Indonesia</div>
+              </div>
+            </div>
+            <label class="form-label">🔗 URL Trakteer</label>
+            <input class="form-input" id="trakteerUrl" placeholder="https://trakteer.id/live13">
+            <label class="form-label">🔑 API Key</label>
+            <input class="form-input" id="trakteerKey" placeholder="Masukkan API key Trakteer">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ads Page -->
+    <div class="page" id="page-ads" style="display:none">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">📢 Pengaturan Iklan (Adsterra)</div>
+        </div>
+        <div class="donation-settings">
+          <div class="donation-platform">
+            <div class="platform-header">
+              <div class="platform-icon" style="background:rgba(239,68,68,.15)">💥</div>
+              <div>
+                <div class="platform-name">Popunder</div>
+                <div class="platform-desc">Iklan popup saat user klik</div>
+              </div>
+            </div>
+            <label class="form-label">🔑 Zone ID</label>
+            <input class="form-input" id="adPopunder" placeholder="pl29772205">
+          </div>
+          <div class="donation-platform">
+            <div class="platform-header">
+              <div class="platform-icon" style="background:rgba(124,58,237,.15)">🔔</div>
+              <div>
+                <div class="platform-name">Social Bar</div>
+                <div class="platform-desc">Push notification ads</div>
+              </div>
+            </div>
+            <label class="form-label">🔑 Zone ID</label>
+            <input class="form-input" id="adSocialBar" placeholder="pl29772207">
+          </div>
+          <div class="donation-platform">
+            <div class="platform-header">
+              <div class="platform-icon" style="background:rgba(34,197,94,.15)">🖼️</div>
+              <div>
+                <div class="platform-name">Banner 728x90</div>
+                <div class="platform-desc">Banner horizontal di atas video</div>
+              </div>
+            </div>
+            <label class="form-label">🔑 Zone ID</label>
+            <input class="form-input" id="adBanner1" placeholder="0fc060af">
+          </div>
+          <div class="donation-platform">
+            <div class="platform-header">
+              <div class="platform-icon" style="background:rgba(59,130,246,.15)">🖼️</div>
+              <div>
+                <div class="platform-name">Banner 160x600</div>
+                <div class="platform-desc">Banner vertikal di samping</div>
+              </div>
+            </div>
+            <label class="form-label">🔑 Zone ID</label>
+            <input class="form-input" id="adBanner2" placeholder="be8ef86c">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Page -->
+    <div class="page" id="page-settings" style="display:none">
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">⚙️ Pengaturan Umum</div>
+        </div>
+        <div class="live-settings">
+          <div class="setting-card">
+            <div class="setting-header">
+              <span class="setting-icon">🔴</span>
+              <span class="setting-title">Auto-Show Donor</span>
+            </div>
+            <div class="setting-desc">Tampilkan donor overlay otomatis di stream</div>
+            <div class="setting-toggle active" id="toggleAutoDonor" onclick="toggleSetting('autoDonor')"></div>
+          </div>
+          <div class="setting-card">
+            <div class="setting-header">
+              <span class="setting-icon">🤖</span>
+              <span class="setting-title">Fake Donor Simulation</span>
+            </div>
+            <div class="setting-desc">Tampilkan donor palsu untuk social proof</div>
+            <div class="setting-toggle active" id="toggleFakeDonor" onclick="toggleSetting('fakeDonor')"></div>
+          </div>
+          <div class="setting-card">
+            <div class="setting-header">
+              <span class="setting-icon">📢</span>
+              <span class="setting-title">Pre-Roll Ad</span>
+            </div>
+            <div class="setting-desc">Tampilkan iklan 15 detik sebelum video</div>
+            <div class="setting-toggle active" id="togglePreroll" onclick="toggleSetting('preroll')"></div>
+          </div>
+          <div class="setting-card">
+            <div class="setting-header">
+              <span class="setting-icon">⏱️</span>
+              <span class="setting-title">Interstitial Ad</span>
+            </div>
+            <div class="setting-desc">Iklan fullscreen tiap 30 menit</div>
+            <div class="setting-toggle active" id="toggleInterstitial" onclick="toggleSetting('interstitial')"></div>
+          </div>
+          <div class="setting-card">
+            <div class="setting-header">
+              <span class="setting-icon">📱</span>
+              <span class="setting-title">Mini Player</span>
+            </div>
+            <div class="setting-desc">Tombol PiP untuk floating video</div>
+            <div class="setting-toggle active" id="toggleMiniPlayer" onclick="toggleSetting('miniPlayer')"></div>
+          </div>
+          <div class="setting-card">
+            <div class="setting-header">
+              <span class="setting-icon">💬</span>
+              <span class="setting-title">Live Chat</span>
+            </div>
+            <div class="setting-desc">Chat sidebar di samping video</div>
+            <div class="setting-toggle" id="toggleChat" onclick="toggleSetting('chat')"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">🔐 Ganti Password Admin</div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Password Lama</label>
+            <input class="form-input" id="oldPass" type="password" placeholder="Password lama">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password Baru</label>
+            <input class="form-input" id="newPass" type="password" placeholder="Password baru">
+          </div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <button class="topbar-btn primary" onclick="changePassword()" style="width:100%">🔐 Ganti Password</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast">✅ Berhasil disimpan!</div>
+
+<script>
+// === Data Store ===
+const STORE_KEY='live13_admin';
+let data={
+  password:'admin13',
+  matches:[
+    {id:1,home:'Indonesia',homeFlag:'🇮🇩',away:'Malaysia',awayFlag:'🇲🇾',homeScore:0,awayScore:0,status:'upcoming',date:'2026-06-20T19:00',stage:'小组赛'},
+    {id:2,home:'Brazil',homeFlag:'🇧🇷',away:'Argentina',awayFlag:'🇦🇷',homeScore:0,awayScore:0,status:'upcoming',date:'2026-06-21T21:00',stage:'小组赛'},
+    {id:3,home:'Jepang',homeFlag:'🇯🇵',away:'Korea Selatan',awayFlag:'🇰🇷',homeScore:0,awayScore:0,status:'upcoming',date:'2026-06-22T18:00',stage:'小组赛'},
+  ],
+  channels:[
+    {id:1,name:'RTB Go',country:'Brunei 🇧🇳',url:'https://cdn-ue1.rtbbn.com/live/rtbgo/index.m3u8',quality:'720p',category:'Piala Dunia',active:true},
+  ],
+  donations:{saweria:'',saweriaKey:'',qris:'',qrisImage:'',trakteer:'',trakteerKey:'',total:0,donors:0},
+  ads:{popunder:'pl29772205',socialBar:'pl29772207',banner1:'0fc060af',banner2:'be8ef86c'},
+  settings:{autoDonor:true,fakeDonor:true,preroll:true,interstitial:true,miniPlayer:true,chat:false},
+};
+
+// VPS API
+const API_URL='/api';
+
+// Load from API (fallback to localStorage)
+async function loadData(){
+  try{
+    const res=await fetch(API_URL+'/data');
+    if(res.ok){
+      const remote=await res.json();
+      if(remote.matches)data.matches=remote.matches;
+      if(remote.channels)data.channels=remote.channels;
+      if(remote.donations)data.donations=remote.donations;
+      if(remote.ads)data.ads=remote.ads;
+      if(remote.settings)data.settings=remote.settings;
+      localStorage.setItem(STORE_KEY,JSON.stringify(data));
+      return;
+    }
+  }catch(e){console.log('API load failed, using localStorage')}
+  const saved=localStorage.getItem(STORE_KEY);
+  if(saved){try{data=JSON.parse(saved)}catch(e){}}
+}
+
+// Save to API + localStorage
+async function saveData(){
+  localStorage.setItem(STORE_KEY,JSON.stringify(data));
+  try{
+    await fetch(API_URL+'/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  }catch(e){console.log('API save failed')}
+}
+
+// === Login ===
+function doLogin(){
+  const pass=document.getElementById('loginPass').value;
+  if(pass===data.password){
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('app').classList.add('show');
+    sessionStorage.setItem('live13_admin','1');
+    renderAll();
+  }else{
+    document.getElementById('loginError').style.display='block';
+    setTimeout(()=>{document.getElementById('loginError').style.display='none'},3000);
+  }
+}
+
+function doLogout(){
+  sessionStorage.removeItem('live13_admin');
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('loginPass').value='';
+}
+
+// Check session
+if(sessionStorage.getItem('live13_admin')==='1'){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').classList.add('show');
+}
+
+// === Navigation ===
+function showPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.style.display='none');
+  document.getElementById('page-'+page).style.display='block';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  
+  const titles={dashboard:'📊 Dashboard',matches:'⚽ Pertandingan',channels:'📺 Channels',donations:'💰 Donasi',ads:'📢 Iklan',settings:'⚙️ Pengaturan'};
+  document.getElementById('pageTitle').textContent=titles[page]||page;
+  renderAll();
+}
+
+// === Render Functions ===
+function renderAll(){
+  renderStats();
+  renderMatches();
+  renderChannels();
+  renderDonations();
+  renderAds();
+  renderSettings();
+}
+
+function renderStats(){
+  document.getElementById('statMatches').textContent=data.matches.length;
+  document.getElementById('statChannels').textContent=data.channels.filter(c=>c.active).length;
+  document.getElementById('statDonations').textContent='Rp '+data.donations.total.toLocaleString('id-ID');
+  document.getElementById('statViewers').textContent=Math.floor(Math.random()*500)+100;
+  document.getElementById('matchBadge').textContent=data.matches.length;
+  document.getElementById('liveCount').textContent=data.matches.filter(m=>m.status==='live').length+' LIVE';
+}
+
+function renderMatches(){
+  // Live matches on dashboard
+  const liveHtml=data.matches.filter(m=>m.status==='live').map(m=>matchCardHtml(m)).join('');
+  document.getElementById('liveMatches').innerHTML=liveHtml||'<p style="color:#6b7280;font-size:13px">Tidak ada pertandingan live saat ini</p>';
+  
+  // All matches on matches page
+  const allHtml=data.matches.map(m=>matchCardHtml(m,true)).join('');
+  document.getElementById('allMatches').innerHTML=allHtml||'<p style="color:#6b7280;font-size:13px">Belum ada pertandingan. Klik "Tambah Match" untuk menambah.</p>';
+}
+
+function matchCardHtml(m,editable=false){
+  const statusClass=m.status==='live'?'live':m.status==='finished'?'finished':'upcoming';
+  const statusText=m.status==='live'?'🔴 LIVE':m.status==='finished'?'✅ FT':'🕐 Upcoming';
+  return `<div class="match-card" data-id="${m.id}">
+    <div class="match-teams">
+      <div class="team"><span class="team-flag">${m.homeFlag}</span><span class="team-name">${m.home}</span></div>
+      <div class="match-score">
+        <input class="score-input" type="number" value="${m.homeScore}" min="0" onchange="updateScore(${m.id},'home',this.value)" ${!editable?'readonly':''}>
+        <span class="score-sep">-</span>
+        <input class="score-input" type="number" value="${m.awayScore}" min="0" onchange="updateScore(${m.id},'away',this.value)" ${!editable?'readonly':''}>
+      </div>
+      <div class="team"><span class="team-flag">${m.awayFlag}</span><span class="team-name">${m.away}</span></div>
+    </div>
+    <div class="match-meta">
+      <span class="match-status ${statusClass}">${statusText}</span>
+      <span class="match-time">${m.stage||''}</span>
+    </div>
+    ${editable?`<div class="match-actions">
+      <select class="form-select" style="width:100px;padding:6px;font-size:11px" onchange="updateStatus(${m.id},this.value)">
+        <option value="upcoming" ${m.status==='upcoming'?'selected':''}>🕐 Upcoming</option>
+        <option value="live" ${m.status==='live'?'selected':''}>🔴 LIVE</option>
+        <option value="finished" ${m.status==='finished'?'selected':''}>✅ Finished</option>
+      </select>
+      <button class="action-btn danger" onclick="deleteMatch(${m.id})" title="Hapus">🗑️</button>
+    </div>`:''}
+  </div>`;
+}
+
+function renderChannels(){
+  const html=data.channels.map(c=>`
+    <div class="channel-card" data-id="${c.id}">
+      <div class="channel-header">
+        <div class="channel-icon">📺</div>
+        <div>
+          <div class="channel-name">${c.name}</div>
+          <div class="channel-country">${c.country} • ${c.quality} • ${c.category}</div>
+        </div>
+      </div>
+      <div class="channel-url">${c.url}</div>
+      <div class="channel-controls">
+        <div class="channel-toggle ${c.active?'active':''}" onclick="toggleChannel(${c.id})"></div>
+        <button class="action-btn danger" onclick="deleteChannel(${c.id})" title="Hapus" style="margin-left:auto">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+  document.getElementById('channelList').innerHTML=html||'<p style="color:#6b7280;font-size:13px">Belum ada channel</p>';
+}
+
+function renderDonations(){
+  document.getElementById('saweriaUrl').value=data.donations.saweria||'';
+  document.getElementById('saweriaKey').value=data.donations.saweriaKey||'';
+  document.getElementById('qrisUrl').value=data.donations.qris||'';
+  document.getElementById('qrisImage').value=data.donations.qrisImage||'';
+  document.getElementById('trakteerUrl').value=data.donations.trakteer||'';
+  document.getElementById('trakteerKey').value=data.donations.trakteerKey||'';
+}
+
+function renderAds(){
+  document.getElementById('adPopunder').value=data.ads.popunder||'';
+  document.getElementById('adSocialBar').value=data.ads.socialBar||'';
+  document.getElementById('adBanner1').value=data.ads.banner1||'';
+  document.getElementById('adBanner2').value=data.ads.banner2||'';
+}
+
+function renderSettings(){
+  Object.keys(data.settings).forEach(k=>{
+    const el=document.getElementById('toggle'+k.charAt(0).toUpperCase()+k.slice(1));
+    if(el){
+      if(data.settings[k])el.classList.add('active');
+      else el.classList.remove('active');
+    }
+  });
+}
+
+// === Match Actions ===
+function toggleAddMatch(){
+  document.getElementById('addMatchForm').classList.toggle('show');
+}
+
+function addMatch(){
+  const home=document.getElementById('homeTeam').value;
+  const away=document.getElementById('awayTeam').value;
+  if(!home||!away){showToast('Isi nama tim!','error');return}
+  
+  const match={
+    id:Date.now(),
+    home:home,
+    homeFlag:document.getElementById('homeFlag').value||'🏳️',
+    away:away,
+    awayFlag:document.getElementById('awayFlag').value||'🏳️',
+    homeScore:parseInt(document.getElementById('homeScore').value)||0,
+    awayScore:parseInt(document.getElementById('awayScore').value)||0,
+    status:document.getElementById('matchStatus').value,
+    date:document.getElementById('matchDate').value,
+    stage:document.getElementById('matchStage').value,
+  };
+  data.matches.push(match);
+  saveData();
+  renderAll();
+  toggleAddMatch();
+  showToast('✅ Match ditambahkan!');
+  
+  // Clear form
+  ['homeTeam','awayTeam','homeFlag','awayFlag'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('homeScore').value='0';
+  document.getElementById('awayScore').value='0';
+}
+
+function updateScore(id,team,value){
+  const match=data.matches.find(m=>m.id===id);
+  if(!match)return;
+  if(team==='home')match.homeScore=parseInt(value)||0;
+  else match.awayScore=parseInt(value)||0;
+  saveData();
+  renderStats();
+}
+
+function updateStatus(id,status){
+  const match=data.matches.find(m=>m.id===id);
+  if(!match)return;
+  match.status=status;
+  saveData();
+  renderAll();
+}
+
+function deleteMatch(id){
+  if(!confirm('Hapus pertandingan ini?'))return;
+  data.matches=data.matches.filter(m=>m.id!==id);
+  saveData();
+  renderAll();
+  showToast('✅ Match dihapus!');
+}
+
+// === Channel Actions ===
+function toggleAddChannel(){
+  document.getElementById('addChannelForm').classList.toggle('show');
+}
+
+function addChannel(){
+  const name=document.getElementById('channelName').value;
+  const url=document.getElementById('channelUrl').value;
+  if(!name||!url){showToast('Isi nama dan URL!','error');return}
+  
+  const channel={
+    id:Date.now(),
+    name:name,
+    country:document.getElementById('channelCountry').value||'🌍',
+    url:url,
+    quality:document.getElementById('channelQuality').value,
+    category:document.getElementById('channelCategory').value,
+    active:true,
+  };
+  data.channels.push(channel);
+  saveData();
+  renderAll();
+  toggleAddChannel();
+  showToast('✅ Channel ditambahkan!');
+  
+  ['channelName','channelCountry','channelUrl'].forEach(id=>document.getElementById(id).value='');
+}
+
+function toggleChannel(id){
+  const channel=data.channels.find(c=>c.id===id);
+  if(!channel)return;
+  channel.active=!channel.active;
+  saveData();
+  renderAll();
+}
+
+function deleteChannel(id){
+  if(!confirm('Hapus channel ini?'))return;
+  data.channels=data.channels.filter(c=>c.id!==id);
+  saveData();
+  renderAll();
+  showToast('✅ Channel dihapus!');
+}
+
+// === Settings ===
+function toggleSetting(key){
+  data.settings[key]=!data.settings[key];
+  const el=document.getElementById('toggle'+key.charAt(0).toUpperCase()+key.slice(1));
+  if(el){
+    if(data.settings[key])el.classList.add('active');
+    else el.classList.remove('active');
+  }
+  saveData();
+  showToast('✅ Setting diupdate!');
+}
+
+function changePassword(){
+  const old=document.getElementById('oldPass').value;
+  const newP=document.getElementById('newPass').value;
+  if(old!==data.password){showToast('Password lama salah!','error');return}
+  if(!newP||newP.length<4){showToast('Password baru minimal 4 karakter!','error');return}
+  data.password=newP;
+  saveData();
+  document.getElementById('oldPass').value='';
+  document.getElementById('newPass').value='';
+  showToast('✅ Password diganti!');
+}
+
+// === Save & Export ===
+function saveAll(){
+  // Save donation settings
+  data.donations.saweria=document.getElementById('saweriaUrl').value;
+  data.donations.saweriaKey=document.getElementById('saweriaKey').value;
+  data.donations.qris=document.getElementById('qrisUrl').value;
+  data.donations.qrisImage=document.getElementById('qrisImage').value;
+  data.donations.trakteer=document.getElementById('trakteerUrl').value;
+  data.donations.trakteerKey=document.getElementById('trakteerKey').value;
+  
+  // Save ad settings
+  data.ads.popunder=document.getElementById('adPopunder').value;
+  data.ads.socialBar=document.getElementById('adSocialBar').value;
+  data.ads.banner1=document.getElementById('adBanner1').value;
+  data.ads.banner2=document.getElementById('adBanner2').value;
+  
+  saveData();
+  showToast('✅ Semua data tersimpan!');
+}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='live13-admin-data.json';a.click();
+  URL.revokeObjectURL(url);
+  showToast('✅ Data diexport!');
+}
+
+// === Toast ===
+function showToast(msg,type='success'){
+  const toast=document.getElementById('toast');
+  toast.textContent=msg;
+  toast.className='toast'+(type==='error'?' error':'');
+  toast.classList.add('show');
+  setTimeout(()=>{toast.classList.remove('show')},3000);
+}
+
+// === Init ===
+(async()=>{await loadData();renderAll()})();
+</script>
+</body>
+</html>
